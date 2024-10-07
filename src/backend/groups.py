@@ -4,6 +4,12 @@ import sqlite3 as sql
 class Group:
     def __init__(self, db, group_id):
         """
+        Initializes the group for a single user database
+
+        Args:
+            self.db: Implicitly creates a new database if it doesn't exist
+            self.cur: Cursor object to interact with the database
+            self.group_id: Group ID for the group associated with a user's credentials
         """
         self.db = sql.connect(db, check_same_thread=True, cached_statements=32)
         self.cur = self.db.cursor()
