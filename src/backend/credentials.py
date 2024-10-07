@@ -19,44 +19,45 @@ class User:
         self.pw = password
 
     def create_cred(self):
-        query = """
-                CREATE TABLE IF NOT EXISTS credentials (
-                cred_name TEXT PRIMARY KEY UNIQUE,
-                username TEXT NOT NULL UNIQUE CHECK(length(username) >= 8),
-                password TEXT NOT NULL CHECK(length(password) >= 8),
-                website TEXT,
-                meta_id INTEGER,
-                group_id INTEGER,
-                FOREIGN KEY (meta_id) REFERENCES metadata(meta_id),
-                FOREIGN KEY (group_id) REFERENCES grouped(group_id)
-                );
-                """
-        self.cur.execute(query)
-        self.db.commit()
+        with self.db:
+            query = """
+                    CREATE TABLE IF NOT EXISTS credentials (
+                    cred_name TEXT PRIMARY KEY UNIQUE,
+                    username TEXT NOT NULL UNIQUE CHECK(length(username) >= 8),
+                    password TEXT NOT NULL CHECK(length(password) >= 8),
+                    website TEXT,
+                    meta_id INTEGER,
+                    group_id INTEGER,
+                    FOREIGN KEY (meta_id) REFERENCES metadata(meta_id),
+                    FOREIGN KEY (group_id) REFERENCES grouped(group_id)
+                    );
+                    """
+            self.cur.execute(query)
 
     def read_cred(self):
-        query = f"""
-                SELECT * FROM credentials
-                WHERE cred_name = ?;
-                """
-        self.cur.execute(query, (self.user,)) # Prevent SQL injection
+        with self.db:
+            query = f"""
+                    SELECT * FROM credentials
+                    WHERE cred_name = ?;
+                    """
+            self.cur.execute(query, (self.user,)) # Prevent SQL injection
 
     def update_cred(self, attr, value):
-        query = f"""
-                UPDATE credentials
-                SET {attr} = ?
-                WHERE cred_name = ?;
-                """
-        self.cur.execute(query, (value, self.user,))
-        self.db.commit()
+        with self.db:
+            query = f"""
+                    UPDATE credentials
+                    SET {attr} = ?
+                    WHERE cred_name = ?;
+                    """
+            self.cur.execute(query, (value, self.user,))
 
     def delete_cred(self):
-        query = f"""
-                DELETE FROM credentials
-                WHERE cred_name = ?;
-                """
-        self.cur.execute(query, (self.user,))
-        self.db.commit()
+        with self.db:
+            query = f"""
+                    DELETE FROM credentials
+                    WHERE cred_name = ?;
+                    """
+            self.cur.execute(query, (self.user,))
 
 
 if __name__ == "__main__":
