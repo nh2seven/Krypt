@@ -40,4 +40,5 @@ class Admin:
 
 
 if __name__ == "__main__":
-    pass
+    database = "Admin.db"
+    db_path = "db/app/" + database
