@@ -4,6 +4,12 @@ import sqlite3 as sql
 class AuditLog:
     def __init__(self, db, log_id):
         """
+        Initialize the audit log variables
+
+        Args:
+            self.db: Implicitly creates a new database if it doesn't exist
+            self.cur: Cursor object to interact with the database
+            self.log_id: ID for the log
         """
         self.db = sql.connect(db, check_same_thread=True, cached_statements=32)
         self.cur = self.db.cursor()
