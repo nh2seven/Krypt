@@ -9,7 +9,7 @@ class Admin:
 
         Args:
         """
-        self.db = sql.connect(db, check_same_thread=True, cached_statements=32)
+        self.db = sql.connect(db, check_same_thread=False, cached_statements=32)
         self.cur = self.db.cursor()
         self.key = recovery_key
 
@@ -23,7 +23,7 @@ class Audit:
 
         Args:
         """
-        self.db = sql.connect(db, check_same_thread=True, cached_statements=32)
+        self.db = sql.connect(db, check_same_thread=False, cached_statements=32)
         self.cur = self.db.cursor()
 
     def create_log(self, log_id, action_type, details, action_time):
