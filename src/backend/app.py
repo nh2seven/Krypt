@@ -1,4 +1,17 @@
 import sqlite3 as sql
+from contextlib import contextmanager
+
+
+@contextmanager
+def db_connect(database):
+    connection = sql.connect(database, check_same_thread=False, cached_statements=32)
+    cursor = connection.cursor()
+    try:
+        yield cursor
+    finally:
+        connection.commit()
+        cursor.close()
+        connection.close()
 
 
 class Admin:
@@ -8,9 +21,10 @@ class Admin:
         No creation or deletion of admin, only one-time setup.
 
         Args:
+        db (str): Database path.
+        recovery_key (str): Path to key used for recovery.
         """
-        self.db = sql.connect(db, check_same_thread=False, cached_statements=32)
-        self.cur = self.db.cursor()
+        self.db = db
         self.key = recovery_key
 
 
@@ -22,17 +36,17 @@ class Audit:
         Intentionally left out the ability to delete individual logs.
 
         Args:
+        db (str): Database path.
         """
-        self.db = sql.connect(db, check_same_thread=False, cached_statements=32)
-        self.cur = self.db.cursor()
+        self.db = db
 
-    def create_log(self, log_id, action_type, details, action_time):
-        with self.db:
-            query = """
-            INSERT INTO auditlog (log_id, action_type, action_time, details)
-            VALUES (?, ?, ?, ?);
-            """
-            self.cur.execute(query, (log_id, action_type, action_time, details))
+    def create_log(self, log_id, action_type, details):
+        query = """
+        INSERT INTO auditlog (log_id, action_type, action_time, details)
+        VALUES (?, ?, CURRENT_TIMESTAMP, ?);
+        """
+        with db_connect(self.db) as cur:
+            cur.execute(query, (log_id, action_type, details))
 
     def read_log(self, filter, value):
         query = "SELECT * FROM auditlog"  # Base query
@@ -43,18 +57,19 @@ class Audit:
             params = ()
 
         query += ";"  # Terminate query
-        with self.db:
-            self.cur.execute(query, params)
+        with db_connect(self.db) as cur:
+            cur.execute(query, params)
 
     def clean_logs(self):
-        with self.db:
-            query = """
-            DELETE FROM auditlog;
-            """
-            self.cur.execute(query)
+        query = """
+        DELETE FROM auditlog;
+        """
+        self.cur.execute(query)
+        with db_connect(self.db) as cur:
+            cur.execute(query)
 
 
-if __name__ == "__main__": # Dummy code, to be replaced
+if __name__ == "__main__":  # Dummy code, to be replaced
     database = "App.db"
     admin = Admin(database, "admin_key_path")
     audit = Audit(database)
