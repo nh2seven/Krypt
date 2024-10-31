@@ -49,7 +49,7 @@ class InitUser:
     def __init__(self, user_db):
         self.user_db = user_db
 
-    def init_tables(self):
+    def init_cred(self):
         with db_connect(self.user_db) as cur:
             init_cred = """
             CREATE TABLE IF NOT EXISTS credentials (
@@ -65,6 +65,10 @@ class InitUser:
             FOREIGN KEY (group_id) REFERENCES groups(group_id)
             );
             """
+            cur.execute(init_cred)
+
+    def init_group(self):
+        with db_connect(self.user_db) as cur:
             init_group = """
             CREATE TABLE IF NOT EXISTS groups (
             group_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,8 +78,7 @@ class InitUser:
             accessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             """
-            for query in [init_cred, init_group]:
-                cur.execute(query)
+            cur.execute(init_group)
 
 
 # Standalone execution
@@ -91,4 +94,4 @@ if __name__ == "__main__":
     app.init_tables()
 
     user = InitUser(user_db)
-    user.init_tables()
+    user.init_cred()
