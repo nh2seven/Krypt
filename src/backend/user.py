@@ -1,4 +1,4 @@
-from init import InitUser as iu
+from .init import InitUser as iu
 import sqlite3 as sql
 from contextlib import contextmanager
 
