@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import QApplication
 class Splash(FramelessWindow):
     def __init__(self):
         super().__init__()
-        self.resize(1000, 600)
+        self.resize(1000, 700)
         self.setWindowTitle("Krypt")
         self.setWindowIcon(QIcon("assets/splash.png"))
 
