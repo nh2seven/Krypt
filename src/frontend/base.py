@@ -26,6 +26,7 @@ class Window(FluentWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Krypt")
+        self.setWindowIcon(QIcon("assets/splash.png"))
         self.resize(1000, 700)
 
         # Initialize interfaces with unique names
