@@ -9,3 +9,14 @@ With Krypt, you can store all your passwords and/or credentials safely, without 
 - Logging of system activities to track user activity and potentially identify rare cases of unauthorized access.
 - Storage of user credentials along with associated websites, tags, descriptions and individual keys if enabled.
 - (To be added later.)
+
+### Installation
+To install Krypt, clone the repository and install the required dependencies:
+```sh
+git clone https://github.com/nh2seven/Krypt.git
+cd Krypt
+pip install -r requirements.txt
+```
+
+### License
+This project is licensed under the GNU General Public License (Version 3). Check out the [LICENSE](LICENSE) file for details.
