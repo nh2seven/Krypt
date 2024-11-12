@@ -2,27 +2,33 @@
 import sys
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QApplication
-from src.frontend.splash import Splash
-from src.frontend.base import Window
 
 # Unify all modules
 from src.backend import app, user
 from src.modules import encryption, login, pw_gen
-from src.frontend import base, cred, log_reg, sidebar
+from src.frontend import base, log_reg, splash
+
+
+def showMainWindow(login):
+    login.close()
+    mainWindow = base.Window()
+    mainWindow.show()
+
+def showLoginScreen(splash):
+    splash.close()
+    login = log_reg.LoginScreen()
+    login.login_success.connect(lambda: showMainWindow(login))
+    login.show()
 
 def runApp():
     app = QApplication(sys.argv)
+    
+    spl = splash.Splash()
+    spl.show()
 
-    splash = Splash()
-    splash.show()
-
-    QTimer.singleShot(400, lambda: showMainWindow(splash))
+    QTimer.singleShot(400, lambda: showLoginScreen(spl))
+    
     sys.exit(app.exec())
-
-def showMainWindow(splash):
-    splash.close()
-    mainWindow = Window()
-    mainWindow.show()
 
 if __name__ == "__main__":
     runApp()
