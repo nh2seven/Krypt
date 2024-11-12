@@ -7,6 +7,7 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import Qt
 from .splash import Splash
 from .cred import CredentialsView
+from .log_reg import LoginScreen
 
 class Widget(QFrame):
     def __init__(self, text: str, parent=None):
@@ -57,8 +58,13 @@ class Window(FluentWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+
     splash = Splash()  # Initialize and show splash screen
-    splash.show()
+    login = LoginScreen()
     w = Window()
+
+    splash.show()
+    login.show()
     w.show()
+    
     app.exec()
