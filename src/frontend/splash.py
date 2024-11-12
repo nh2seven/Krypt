@@ -16,7 +16,7 @@ class Splash(FramelessWindow):
 
         # 1. Create a splash screen
         self.splashScreen = SplashScreen(self.windowIcon(), self)
-        self.splashScreen.setIconSize(QSize(102, 102))
+        self.splashScreen.setIconSize(QSize(150, 150))
 
         titleBar = StandardTitleBar(self.splashScreen)
         titleBar.setIcon(self.windowIcon())
@@ -34,7 +34,7 @@ class Splash(FramelessWindow):
 
     def createSubInterface(self):
         loop = QEventLoop(self)
-        QTimer.singleShot(3000, loop.quit)  # 3 seconds to load other stuff
+        QTimer.singleShot(1000, loop.quit)  # 3 seconds to load other stuff
         loop.exec()
 
 
