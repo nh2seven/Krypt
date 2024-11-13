@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget,
                            QVBoxLayout, QHBoxLayout,
                            QStackedWidget, QLabel)
 from PyQt6.QtGui import QIcon
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 
 from .sidebar import Sidebar
 from .topbar import TopToolBar
@@ -15,6 +15,8 @@ from .cred import CredentialsView
 ICON_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "assets", "splash.png"))
 
 class MainWindow(QMainWindow):
+    logout = pyqtSignal()
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Krypt")
@@ -60,6 +62,10 @@ class MainWindow(QMainWindow):
         # Add widgets to main layout
         main_layout.addWidget(self.sidebar)
         main_layout.addWidget(self.stack)
+
+        # Connect logout signal
+        self.sidebar.logoutClicked.connect(self.handle_logout)
+
     
     def _setup_pages(self):
         """Setup all application pages"""
@@ -84,6 +90,16 @@ class MainWindow(QMainWindow):
         settings_layout = QVBoxLayout(settings_page)
         settings_layout.addWidget(QLabel("Settings"))
         self.stack.addWidget(settings_page)
+
+    def handle_logout(self):
+        """Clean up and return to login screen"""
+        # Reset sensitive UI elements
+        self.credentials_view.clear_credentials()
+        self.stack.setCurrentIndex(0)
+        self.sidebar.set_active_page(0)
+        
+        # Emit logout signal
+        self.logout.emit()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
