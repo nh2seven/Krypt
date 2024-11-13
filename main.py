@@ -9,14 +9,10 @@ from src.backend import app, user
 from src.modules import encryption, login, pw_gen
 from src.frontend import base, log_reg
 
-# Get icon path
-ICON_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets", "splash.png"))
-
 # main.py
 class Application:
     def __init__(self):
         self.app = QApplication(sys.argv)
-        self.app.setWindowIcon(QIcon(ICON_PATH))
         self.app.setDesktopFileName("krypt")
         
         # Create single instances

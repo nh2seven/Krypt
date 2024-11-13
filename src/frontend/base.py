@@ -11,8 +11,6 @@ from .sidebar import Sidebar
 from .topbar import TopToolBar
 from .cred import CredentialsView
 
-# Get absolute path to icon
-ICON_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "assets", "splash.png"))
 
 class MainWindow(QMainWindow):
     logout = pyqtSignal()
@@ -20,7 +18,6 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Krypt")
-        self.setWindowIcon(QIcon(ICON_PATH))
         self.resize(1000, 700)
 
         # Style
@@ -103,7 +100,6 @@ class MainWindow(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    app.setWindowIcon(QIcon(ICON_PATH))  # Set app-wide icon
     app.setDesktopFileName("Krypt")  # Match with .desktop file name
     window = MainWindow()
     window.show()
