@@ -267,3 +267,14 @@ class CredentialsView(QWidget):
             title, username, password, url, notes = dialog.get_data()
             print(f"Adding: {title}, {username}, {url}")  # Replace with DB call
             self.load_credentials()  # Reload to show new credential
+
+    def clear_credentials(self):
+        """Reset view state"""
+        # Clear credential list
+        while self.cred_list.count():
+            item = self.cred_list.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+                
+        # Reset sidebar
+        self.detail_sidebar.show_placeholder()
