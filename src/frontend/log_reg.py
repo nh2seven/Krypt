@@ -214,3 +214,16 @@ class LoginScreen(QWidget):
                 duration=2000,
                 parent=self,
             )
+
+    def clear_fields(self):
+        """Reset login form state"""
+        # Reset user selection
+        self.current_user = None
+        self.user_label.setText("Select a user to login")
+        
+        # Clear password
+        self.password_input.clear()
+        self.password_input.setPlaceholderText("Enter password")
+
+        # Optional: Reset focus
+        self.password_input.clearFocus()
