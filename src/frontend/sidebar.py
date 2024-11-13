@@ -47,6 +47,7 @@ class SidebarButton(QPushButton):
 
 class Sidebar(QFrame):
     pageChanged = pyqtSignal(int)
+    logoutClicked = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -77,11 +78,28 @@ class Sidebar(QFrame):
         # Set initial selection
         self.buttons["Home"].setChecked(True)
 
+    def set_active_page(self, index):
+        """Set active page from external call"""
+        # Uncheck all buttons first
+        for button in self.buttons.values():
+            button.setChecked(False)
+            
+        # Find and check the button for this index
+        for button_text, button in self.buttons.items():
+            if button_text == "Home" and index == 0:
+                button.setChecked(True)
+            elif button_text == "Passwords" and index == 1:
+                button.setChecked(True)
+            elif button_text == "Generator" and index == 2:
+                button.setChecked(True)
+            elif button_text == "Settings" and index == 3:
+                button.setChecked(True)
+    
     def _handle_button_click(self, index):
         """Handle button clicks and emit page change signal"""
         if index == -1:
             # Handle logout separately
-            print("Logout clicked")  # Add actual logout logic
+            self.logoutClicked.emit()
             return
 
         # Uncheck all buttons
