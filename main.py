@@ -6,8 +6,8 @@ from PyQt6.QtGui import QIcon
 
 # Unify all modules
 from src.backend import app, user
-from src.modules import encryption, login, pw_gen
-from src.frontend import base, log_reg
+from src.modules import auth, encryption, pw_gen
+from src.frontend import base, login
 
 # main.py
 class Application:
@@ -16,7 +16,7 @@ class Application:
         self.app.setDesktopFileName("krypt")
         
         # Create single instances
-        self.login = log_reg.LoginScreen()
+        self.login = login.LoginScreen()
         self.main_window = base.MainWindow()
         
         # Connect signals
