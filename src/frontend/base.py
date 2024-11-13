@@ -1,70 +1,95 @@
 # base.py
 import sys
-from qfluentwidgets import NavigationItemPosition, FluentWindow, SubtitleLabel, setFont
-from qfluentwidgets import FluentIcon as FIF
-from PyQt6.QtWidgets import QApplication, QFrame, QHBoxLayout
+import os
+from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, 
+                           QVBoxLayout, QHBoxLayout,
+                           QStackedWidget, QLabel)
 from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import Qt
-from .splash import Splash
-from .cred import CredentialsView
-from .log_reg import LoginScreen
 
-class Widget(QFrame):
-    def __init__(self, text: str, parent=None):
-        super().__init__(parent=parent)
-        self.label = SubtitleLabel(text, self)
-        self.hBoxLayout = QHBoxLayout(self)
+from .sidebar import Sidebar
+from .topbar import TopToolBar
 
-        setFont(self.label, 24)
-        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.hBoxLayout.addWidget(self.label, 1, Qt.AlignmentFlag.AlignCenter)
-        self.setObjectName(text.replace(" ", "-"))
+# Get absolute path to icon
+ICON_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "assets", "splash.png"))
 
-
-class Window(FluentWindow):
-    """Main Interface"""
-
+class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Krypt")
-        self.setWindowIcon(QIcon("assets/splash.png"))
+        self.setWindowIcon(QIcon(ICON_PATH))
         self.resize(1000, 700)
 
-        # Initialize interfaces with unique names
-        self.homeInterface = Widget("Home Interface", self)
-        self.musicInterface = Widget("Music Interface", self)
-        self.videoInterface = Widget("Video Interface", self)
-        self.settingInterface = Widget("Setting Interface", self)
+        # Style
+        self.setStyleSheet("""
+            QMainWindow {
+                background-color: #ffffff;
+            }
+            QLabel {
+                color: #202020;
+            }
+            QStackedWidget {
+                background-color: #ffffff;
+            }
+        """)
+
+        # Add top toolbar
+        self.toolbar = TopToolBar(self)
+        self.addToolBar(self.toolbar)
         
-        # Initialize credentials interface and set a unique object name
-        self.credentialsView = Widget("Credentials View", self)
-        self.credentialsView.setObjectName("CredentialsView")
-
-        self.initNavigation()
-        self.show()
+        # Create main widget and layout
+        main_widget = QWidget()
+        self.setCentralWidget(main_widget)
+        main_layout = QHBoxLayout(main_widget)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+        
+        # Create sidebar
+        self.sidebar = Sidebar()
+        
+        # Create stacked widget for content
+        self.stack = QStackedWidget()
+        
+        # Add pages
+        self._setup_pages()
+        
+        # Connect sidebar signals
+        self.sidebar.pageChanged.connect(self.stack.setCurrentIndex)
+        
+        # Add widgets to main layout
+        main_layout.addWidget(self.sidebar)
+        main_layout.addWidget(self.stack)
     
-    def initNavigation(self):
-        self.addSubInterface(self.homeInterface, FIF.HOME, "Home")
-        self.addSubInterface(self.musicInterface, FIF.MUSIC, "Music library")
-        self.addSubInterface(self.videoInterface, FIF.VIDEO, "Video library")
-        self.addSubInterface(self.credentialsView, FIF.LINK, "Credentials")
-        self.addSubInterface(
-            self.settingInterface,
-            FIF.SETTING,
-            "Settings",
-            NavigationItemPosition.BOTTOM,
-        )
+    def _setup_pages(self):
+        """Setup all application pages"""
+        # Home page
+        home_page = QWidget()
+        home_layout = QVBoxLayout(home_page)
+        home_layout.addWidget(QLabel("Home Interface"))
+        self.stack.addWidget(home_page)
+        
+        # Passwords page
+        passwords_page = QWidget()
+        passwords_layout = QVBoxLayout(passwords_page)
+        passwords_layout.addWidget(QLabel("Password Manager"))
+        self.stack.addWidget(passwords_page)
+        
+        # Generator page
+        generator_page = QWidget()
+        generator_layout = QVBoxLayout(generator_page)
+        generator_layout.addWidget(QLabel("Password Generator"))
+        self.stack.addWidget(generator_page)
+        
+        # Settings page
+        settings_page = QWidget()
+        settings_layout = QVBoxLayout(settings_page)
+        settings_layout.addWidget(QLabel("Settings"))
+        self.stack.addWidget(settings_page)
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     app = QApplication(sys.argv)
-
-    splash = Splash()  # Initialize and show splash screen
-    login = LoginScreen()
-    w = Window()
-
-    splash.show()
-    login.show()
-    w.show()
-    
-    app.exec()
+    app.setWindowIcon(QIcon(ICON_PATH))  # Set app-wide icon
+    app.setDesktopFileName("Krypt")  # Match with .desktop file name
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec())
