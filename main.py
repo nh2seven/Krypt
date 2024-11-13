@@ -12,24 +12,28 @@ from src.frontend import base, log_reg
 # Get icon path
 ICON_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets", "splash.png"))
 
+# main.py
 class Application:
     def __init__(self):
         self.app = QApplication(sys.argv)
         self.app.setWindowIcon(QIcon(ICON_PATH))
         self.app.setDesktopFileName("krypt")
         
-        # Initialize windows
-        self.login = None
-        self.main_window = None
+        # Create single instances
+        self.login = log_reg.LoginScreen()
+        self.main_window = base.MainWindow()
+        
+        # Connect signals
+        self.login.login_success.connect(self.show_main_window)
+        self.main_window.logout.connect(self.show_login)
         
     def show_login(self):
-        self.login = log_reg.LoginScreen()
-        self.login.login_success.connect(self.show_main_window)
+        self.main_window.hide()
+        self.login.clear_fields()  # Add this method to LoginScreen
         self.login.show()
         
     def show_main_window(self):
-        self.login.close()
-        self.main_window = base.MainWindow()
+        self.login.hide()
         self.main_window.show()
         
     def run(self):
