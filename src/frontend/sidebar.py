@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import QFrame, QVBoxLayout, QPushButton
 from PyQt6.QtCore import pyqtSignal, QSize, Qt
 from PyQt6.QtGui import QIcon
 
+
 class StyleSheet:
     SIDEBAR_STYLE = """
     QFrame#sidebar {
@@ -10,7 +11,7 @@ class StyleSheet:
         border-right: 1px solid #e0e0e0;
     }
     """
-    
+
     BUTTON_STYLE = """
     QPushButton {
         text-align: left;
@@ -31,6 +32,7 @@ class StyleSheet:
     }
     """
 
+
 class SidebarButton(QPushButton):
     def __init__(self, text, icon=None):
         super().__init__()
@@ -42,55 +44,59 @@ class SidebarButton(QPushButton):
         self.setFixedHeight(40)
         self.setStyleSheet(StyleSheet.BUTTON_STYLE)
 
+
 class Sidebar(QFrame):
-    # Signal emitted when page should change
     pageChanged = pyqtSignal(int)
-    
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("sidebar")
         self.setStyleSheet(StyleSheet.SIDEBAR_STYLE)
         self.setFixedWidth(200)
-        
+
         # Main layout
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 10, 0, 10)
         self.layout.setSpacing(2)
-        
+
         # Store buttons
         self.buttons = {}
-        
-        # Add navigation buttons
+
+        # Add main navigation buttons
         self._add_button("Home", 0)
         self._add_button("Passwords", 1)
         self._add_button("Generator", 2)
-        self._add_button("Settings", 3)
-        
-        # Add stretch at bottom
+
+        # Add stretch to push bottom buttons down
         self.layout.addStretch()
-        
+
+        # Add bottom buttons
+        self._add_button("Logout", -1)  # Use -1 to indicate special handling
+        self._add_button("Settings", 3)
+
         # Set initial selection
         self.buttons["Home"].setChecked(True)
-    
+
+    def _handle_button_click(self, index):
+        """Handle button clicks and emit page change signal"""
+        if index == -1:
+            # Handle logout separately
+            print("Logout clicked")  # Add actual logout logic
+            return
+
+        # Uncheck all buttons
+        for button in self.buttons.values():
+            button.setChecked(False)
+
+        # Check clicked button
+        self.sender().setChecked(True)
+
+        # Emit signal with page index
+        self.pageChanged.emit(index)
+
     def _add_button(self, text, index):
         """Add a navigation button to the sidebar"""
         button = SidebarButton(text)
         button.clicked.connect(lambda: self._handle_button_click(index))
         self.buttons[text] = button
         self.layout.addWidget(button)
-    
-    def _handle_button_click(self, index):
-        """Handle button clicks and emit page change signal"""
-        # Uncheck all buttons
-        for button in self.buttons.values():
-            button.setChecked(False)
-        # Check clicked button
-        self.sender().setChecked(True)
-        # Emit signal with page index
-        self.pageChanged.emit(index)
-    
-    def set_active_page(self, index):
-        """Set active page from external call"""
-        # Find button for this index
-        for i, (text, button) in enumerate(self.buttons.items()):
-            button.setChecked(i == index)
