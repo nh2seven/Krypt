@@ -9,6 +9,7 @@ from PyQt6.QtCore import Qt
 
 from .sidebar import Sidebar
 from .topbar import TopToolBar
+from .cred import CredentialsView
 
 # Get absolute path to icon
 ICON_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "assets", "splash.png"))
@@ -69,10 +70,8 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(home_page)
         
         # Passwords page
-        passwords_page = QWidget()
-        passwords_layout = QVBoxLayout(passwords_page)
-        passwords_layout.addWidget(QLabel("Password Manager"))
-        self.stack.addWidget(passwords_page)
+        self.credentials_view = CredentialsView()
+        self.stack.addWidget(self.credentials_view)
         
         # Generator page
         generator_page = QWidget()
