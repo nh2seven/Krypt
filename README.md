@@ -20,3 +20,6 @@ pip install -r requirements.txt
 
 ### License
 This project is licensed under the GNU General Public License (Version 3). Check out the [LICENSE](LICENSE) file for details.
+
+### Attributions
+- Icons used in the app are from the open-sourced [Iconify Material Symbols](https://icon-sets.iconify.design/material-symbols/) collection
