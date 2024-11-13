@@ -1,34 +1,41 @@
-# Import necessary modules
+# main.py
 import sys
-from PyQt6.QtCore import QTimer
+import os
 from PyQt6.QtWidgets import QApplication
+from PyQt6.QtGui import QIcon
 
 # Unify all modules
 from src.backend import app, user
 from src.modules import encryption, login, pw_gen
-from src.frontend import base, log_reg, splash
+from src.frontend import base, log_reg
 
+# Get icon path
+ICON_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets", "splash.png"))
 
-def showMainWindow(login):
-    login.close()
-    mainWindow = base.Window()
-    mainWindow.show()
-
-def showLoginScreen(splash):
-    splash.close()
-    login = log_reg.LoginScreen()
-    login.login_success.connect(lambda: showMainWindow(login))
-    login.show()
-
-def runApp():
-    app = QApplication(sys.argv)
-    
-    spl = splash.Splash()
-    spl.show()
-
-    QTimer.singleShot(400, lambda: showLoginScreen(spl))
-    
-    sys.exit(app.exec())
+class Application:
+    def __init__(self):
+        self.app = QApplication(sys.argv)
+        self.app.setWindowIcon(QIcon(ICON_PATH))
+        self.app.setDesktopFileName("krypt")
+        
+        # Initialize windows
+        self.login = None
+        self.main_window = None
+        
+    def show_login(self):
+        self.login = log_reg.LoginScreen()
+        self.login.login_success.connect(self.show_main_window)
+        self.login.show()
+        
+    def show_main_window(self):
+        self.login.close()
+        self.main_window = base.MainWindow()
+        self.main_window.show()
+        
+    def run(self):
+        self.show_login()
+        return self.app.exec()
 
 if __name__ == "__main__":
-    runApp()
+    app = Application()
+    sys.exit(app.run())
