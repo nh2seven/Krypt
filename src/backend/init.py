@@ -1,9 +1,8 @@
 import sqlite3 as sql
 from contextlib import contextmanager
-import os
 
 
-@contextmanager # Context manager for database connection
+@contextmanager
 def db_connect(database):
     connection = sql.connect(database, check_same_thread=False, cached_statements=32)
     cursor = connection.cursor()
