@@ -71,7 +71,7 @@ class LoginScreen(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Login")
-        self.setFixedSize(1000, 700)
+        self.setFixedSize(700, 500)
         self.current_user = None
         self.initUI()
 
@@ -84,7 +84,7 @@ class LoginScreen(QWidget):
         # Left panel (User list)
         left_panel = QFrame()
         left_panel.setStyleSheet("background-color: #f5f5f5;")
-        left_panel.setFixedWidth(400)
+        left_panel.setFixedWidth(350)
         left_layout = QVBoxLayout(left_panel)
         left_layout.setContentsMargins(20, 20, 20, 20)
 
