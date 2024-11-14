@@ -3,8 +3,8 @@ import os
 from PyQt6.QtWidgets import QApplication
 
 # Unify all modules
-from src.backend import app, user, init
-from src.modules import auth, encryption, pw_gen
+from src.backend import app, auth, user, init
+from src.modules import encryption, pw_gen
 from src.frontend import base, login
 import setup
 
