@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
     QFrame,
 )
 from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtGui import QIcon
 from qfluentwidgets import (
     CardWidget,
     ScrollArea,
@@ -90,9 +91,14 @@ class LoginScreen(QWidget):
 
         # Action buttons
         buttons_layout = QHBoxLayout()
+        buttons_layout.setSpacing(10)
         add_user_btn = PushButton("New User")
+        add_user_btn.setIcon(QIcon("assets/add.svg"))
+        add_user_btn.setFixedWidth(135)
         add_user_btn.clicked.connect(self.add_user)
         delete_user_btn = PushButton("Delete User")
+        delete_user_btn.setIcon(QIcon("assets/delete.svg"))
+        delete_user_btn.setFixedWidth(135)
         delete_user_btn.clicked.connect(self.delete_user)
         buttons_layout.addWidget(add_user_btn)
         buttons_layout.addWidget(delete_user_btn)
