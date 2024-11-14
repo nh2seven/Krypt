@@ -25,13 +25,7 @@ class Credentials:
         """
         self.db = db
 
-    def create_user(self):  # Pass user database name/path as argument
-        user = iu(self.db)
-        user.init_cred()
-
-    def add_cred(
-        self, title, username, password, url, notes, tags, expiration, group_id
-    ):
+    def add_cred(self, title, username, password, url, notes, tags, expiration, group_id):
         with db_connect(self.db) as cur:
             query = """INSERT INTO credentials (title, username, password, url, notes, tags, expiration, group_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"""
             params = (title, username, password, url, notes, tags, expiration, group_id)
@@ -42,9 +36,7 @@ class Credentials:
             query = """SELECT * FROM credentials WHERE title = ?;"""
             cur.execute(query, (title,))
 
-    def modify_cred(
-        self, title, username, password, url, notes, tags, expiration, group_id
-    ):
+    def modify_cred(self, title, username, password, url, notes, tags, expiration, group_id):
         with db_connect(self.db) as cur:
             query = """UPDATE credentials SET username = ?, password = ?, url = ?, notes = ?, tags = ?, expiration = ?, group_id = ? WHERE title = ?;"""
             params = (username, password, url, notes, tags, expiration, group_id, title)
@@ -54,11 +46,6 @@ class Credentials:
         with db_connect(self.db) as cur:
             query = """DELETE FROM credentials WHERE title = ?;"""
             cur.execute(query, (title,))
-
-    def delete_user(self):
-        with db_connect(self.db) as cur:
-            query = """DROP DATABASE ?;"""
-            cur.execute(query, (self.db,))
 
 
 class Groups:
