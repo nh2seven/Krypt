@@ -3,7 +3,7 @@ import os
 from PyQt6.QtWidgets import QApplication
 
 # Unify all modules
-from src.backend import app, user
+from src.backend import app, user, init
 from src.modules import auth, encryption, pw_gen
 from src.frontend import base, login
 import setup
@@ -39,8 +39,16 @@ class Application:
 
 
 def Setup():
-    if not os.path.exists("db"):
+    if os.path.exists("db"):
+        pass
+    else:
+        print("Setting up Krypt...")
+        
+        db_path = "db/App.db"
         setup.dirs()
+        krypt = init.InitApp(db_path)   
+        krypt.init_tables()
+        setup.set_admin(db_path)
 
 
 if __name__ == "__main__":
