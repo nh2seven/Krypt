@@ -1,13 +1,13 @@
 # src/frontend/sidebar.py
-from PyQt6.QtWidgets import QFrame, QVBoxLayout, QPushButton
-from PyQt6.QtCore import pyqtSignal, QSize, Qt
-from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QFrame, QVBoxLayout, QWidget, QScrollArea
+from PyQt6.QtCore import pyqtSignal, Qt
+from qfluentwidgets import PushButton, SubtitleLabel
 
 
 class StyleSheet:
     SIDEBAR_STYLE = """
     QFrame#sidebar {
-        background-color: #f0f0f0;
+        background-color: #f5f5f5;
         border-right: 1px solid #e0e0e0;
     }
     """
@@ -33,21 +33,16 @@ class StyleSheet:
     """
 
 
-class SidebarButton(QPushButton):
-    def __init__(self, text, icon=None):
+class GroupButton(PushButton):
+    def __init__(self, text):
         super().__init__()
         self.setText(text)
-        if icon:
-            self.setIcon(icon)
-            self.setIconSize(QSize(20, 20))
         self.setCheckable(True)
-        self.setFixedHeight(45)
         self.setStyleSheet(StyleSheet.BUTTON_STYLE)
 
 
-class Sidebar(QFrame):
-    pageChanged = pyqtSignal(int)
-    logoutClicked = pyqtSignal()
+class GroupSidebar(QFrame):
+    groupSelected = pyqtSignal(str)  # Emits group name when selected
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -56,65 +51,55 @@ class Sidebar(QFrame):
         self.setFixedWidth(250)
 
         # Main layout
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(0, 10, 0, 10)
-        self.layout.setSpacing(2)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(10)
 
-        # Store buttons
-        self.buttons = {}
+        # Header
+        self.header = SubtitleLabel("Groups")
+        layout.addWidget(self.header)
 
-        # Add main navigation buttons
-        self._add_button("Home", 0)
-        self._add_button("Passwords", 1)
-        self._add_button("Generator", 2)
+        # Scrollable group list
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setStyleSheet(
+            "QScrollArea{border: none; background-color: transparent;}"
+        )
 
-        # Add stretch to push bottom buttons down
-        self.layout.addStretch()
+        # Container for group buttons
+        self.group_container = QWidget()
+        self.groups_layout = QVBoxLayout(self.group_container)
+        self.groups_layout.setSpacing(2)
+        self.groups_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        scroll.setWidget(self.group_container)
 
-        # Add bottom buttons
-        self._add_button("Logout", -1)  # Use -1 to indicate special handling
-        self._add_button("Settings", 3)
+        layout.addWidget(scroll)
 
-        # Set initial selection
-        self.buttons["Home"].setChecked(True)
+        # Store group buttons
+        self.group_buttons = {}
 
-    def set_active_page(self, index):
-        """Set active page from external call"""
-        # Uncheck all buttons first
-        for button in self.buttons.values():
-            button.setChecked(False)
-            
-        # Find and check the button for this index
-        for button_text, button in self.buttons.items():
-            if button_text == "Home" and index == 0:
-                button.setChecked(True)
-            elif button_text == "Passwords" and index == 1:
-                button.setChecked(True)
-            elif button_text == "Generator" and index == 2:
-                button.setChecked(True)
-            elif button_text == "Settings" and index == 3:
-                button.setChecked(True)
-    
-    def _handle_button_click(self, index):
-        """Handle button clicks and emit page change signal"""
-        if index == -1:
-            # Handle logout separately
-            self.logoutClicked.emit()
-            return
+    def add_group(self, group_name):
+        """Add a new group button"""
+        if group_name not in self.group_buttons:
+            button = GroupButton(group_name)
+            button.clicked.connect(lambda: self._handle_group_click(group_name))
+            self.group_buttons[group_name] = button
+            self.groups_layout.addWidget(button)
 
+    def _handle_group_click(self, group_name):
+        """Handle group selection"""
         # Uncheck all buttons
-        for button in self.buttons.values():
+        for button in self.group_buttons.values():
             button.setChecked(False)
 
-        # Check clicked button
-        self.sender().setChecked(True)
+        # Check selected button
+        self.group_buttons[group_name].setChecked(True)
 
-        # Emit signal with page index
-        self.pageChanged.emit(index)
+        # Emit selected group
+        self.groupSelected.emit(group_name)
 
-    def _add_button(self, text, index):
-        """Add a navigation button to the sidebar"""
-        button = SidebarButton(text)
-        button.clicked.connect(lambda: self._handle_button_click(index))
-        self.buttons[text] = button
-        self.layout.addWidget(button)
+    def set_active_group(self, group_name):
+        """Set active group from external call"""
+        if group_name in self.group_buttons:
+            self._handle_group_click(group_name)
