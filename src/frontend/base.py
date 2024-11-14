@@ -14,6 +14,7 @@ from PyQt6.QtCore import Qt, pyqtSignal
 # Remove sidebar import
 from .topbar import TopToolBar
 from .cred import CredentialsView
+from .settings import SettingsView
 
 
 class MainWindow(QMainWindow):
@@ -76,10 +77,8 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(generator_page)
         
         # Settings page (index 2)
-        settings_page = QWidget()
-        settings_layout = QVBoxLayout(settings_page)
-        settings_layout.addWidget(QLabel("Settings"))
-        self.stack.addWidget(settings_page)
+        self.settings_view = SettingsView()
+        self.stack.addWidget(self.settings_view)
 
     def handle_logout(self):
         """Clean up and return to login screen"""
