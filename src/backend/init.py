@@ -49,6 +49,21 @@ class InitUser:
     def __init__(self, user_db):
         self.user_db = user_db
 
+    def init_user(self, pw):
+        with db_connect(self.user_db) as cur:
+            init_user = """
+            CREATE TABLE user (
+            pwd TEXT NOT NULL
+            );
+            """
+            user_pw = """
+            INSERT INTO user (pwd) VALUES (?)
+            """
+            param = (pw,)
+
+            cur.execute(init_user)
+            cur.execute(user_pw, param)
+
     def init_cred(self):
         with db_connect(self.user_db) as cur:
             init_cred = """
