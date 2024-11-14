@@ -55,7 +55,7 @@ class CredentialButton(PushButton):
 class DetailSidebar(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setFixedWidth(300)
+        self.setFixedWidth(350)
         self.setStyleSheet("""
             QFrame {
                 background-color: #f5f5f5;
