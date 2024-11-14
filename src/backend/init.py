@@ -81,17 +81,5 @@ class InitUser:
             cur.execute(init_group)
 
 
-# Standalone execution
 if __name__ == "__main__":
-    db_root = "db/"
-    app_db = os.path.join(db_root, "App.db")
-    user_db = os.path.join(db_root, "users/user.db")
-
-    os.makedirs(os.path.dirname(app_db), exist_ok=True)
-    os.makedirs(os.path.dirname(user_db), exist_ok=True)
-
-    app = InitApp(app_db)
-    app.init_tables()
-
-    user = InitUser(user_db)
-    user.init_cred()
+    exit("Invalid entry point")
