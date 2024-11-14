@@ -41,7 +41,7 @@ class SidebarButton(QPushButton):
             self.setIcon(icon)
             self.setIconSize(QSize(20, 20))
         self.setCheckable(True)
-        self.setFixedHeight(40)
+        self.setFixedHeight(45)
         self.setStyleSheet(StyleSheet.BUTTON_STYLE)
 
 
@@ -53,7 +53,7 @@ class Sidebar(QFrame):
         super().__init__(parent)
         self.setObjectName("sidebar")
         self.setStyleSheet(StyleSheet.SIDEBAR_STYLE)
-        self.setFixedWidth(200)
+        self.setFixedWidth(250)
 
         # Main layout
         self.layout = QVBoxLayout(self)
