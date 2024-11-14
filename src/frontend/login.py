@@ -17,11 +17,10 @@ from qfluentwidgets import (
     SubtitleLabel,
     InfoBarPosition,
 )
-from qfluentwidgets.common.style_sheet import FluentStyleSheet
 
 
 class UserCard(CardWidget):
-    userClicked = pyqtSignal(str)  # Create new signal for username
+    userClicked = pyqtSignal(str)
 
     def __init__(self, username):
         super().__init__()
@@ -60,7 +59,7 @@ class UserCard(CardWidget):
     def mouseReleaseEvent(self, e):
         super().mouseReleaseEvent(e)
         if e.button() == Qt.MouseButton.LeftButton:
-            self.userClicked.emit(self.username)  # Emit username with new signal
+            self.userClicked.emit(self.username)
 
 
 class LoginScreen(QWidget):
@@ -152,7 +151,6 @@ class LoginScreen(QWidget):
         login_btn = PushButton("Login")
         login_btn.clicked.connect(self.handle_login)
         right_layout.addWidget(login_btn)
-
         right_layout.addStretch()
 
         # Add panels to main layout
@@ -170,7 +168,7 @@ class LoginScreen(QWidget):
 
     def add_user_card(self, username):
         card = UserCard(username)
-        card.userClicked.connect(self.select_user)  # Connect to new signal
+        card.userClicked.connect(self.select_user)
         self.cards_layout.addWidget(card)
 
     def select_user(self, username):
@@ -230,9 +228,6 @@ class LoginScreen(QWidget):
         self.current_user = None
         self.user_label.setText("Select a user to login")
         
-        # Clear password
         self.password_input.clear()
         self.password_input.setPlaceholderText("Enter password")
-
-        # Optional: Reset focus
         self.password_input.clearFocus()
