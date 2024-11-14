@@ -27,6 +27,8 @@ class Admin:
         self.db = db
         self.key = recovery_key
 
+    # More functionality to be added in the future; placeholder for now
+
 
 class Audit:
     def __init__(self, db):
@@ -49,14 +51,14 @@ class Audit:
             cur.execute(query, (log_id, action_type, details))
 
     def read_log(self, filter, value):
-        query = "SELECT * FROM auditlog"  # Base query
+        query = "SELECT * FROM auditlog"
         if filter in ["log_id", "action_type", "action_time"]:
             query += f" WHERE {filter} = ?"
             params = (value,)
         else:
             params = ()
 
-        query += ";"  # Terminate query
+        query += ";"
         with db_connect(self.db) as cur:
             cur.execute(query, params)
 
@@ -69,7 +71,5 @@ class Audit:
             cur.execute(query)
 
 
-if __name__ == "__main__":  # Dummy code, to be replaced
-    database = "App.db"
-    admin = Admin(database, "admin_key_path")
-    audit = Audit(database)
+if __name__ == "__main__":
+    exit("Invalid entry point")
