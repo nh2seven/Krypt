@@ -30,6 +30,7 @@ class Application:
         
     def show_main_window(self):
         self.login.hide()
+        self.main_window.refresh_credentials()
         self.main_window.show()
         
     def run(self):
