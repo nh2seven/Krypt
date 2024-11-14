@@ -2,25 +2,24 @@
 from PyQt6.QtWidgets import (
     QWidget,
     QVBoxLayout,
-    QTableWidget,
-    QTableWidgetItem,
     QDialog,
     QHBoxLayout,
     QLabel,
     QGridLayout,
     QFrame,
     QStackedWidget,
+    QToolButton,
 )
-from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve
+from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QSize
+from PyQt6.QtGui import QIcon
+
 from qfluentwidgets import (
-    TableWidget,
     PushButton,
     LineEdit,
-    CardWidget,
-    InfoBar,
-    InfoBarPosition,
     SubtitleLabel,
 )
+
+from .sidebar import GroupSidebar
 
 
 class CredentialButton(PushButton):
@@ -50,68 +49,70 @@ class CredentialButton(PushButton):
         )
 
 
-# src/frontend/cred.py
-
 class DetailSidebar(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFixedWidth(350)
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QFrame {
                 background-color: #f5f5f5;
                 border-left: 1px solid #e0e0e0;
             }
-        """)
-        
+        """
+        )
+
         # Create layout
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
-        
+
         # Header
         self.title = SubtitleLabel("Credentials")
         layout.addWidget(self.title)
-        
+
         # Placeholder content
         self.placeholder = QLabel("Select a credential to view details")
-        self.placeholder.setStyleSheet("""
+        self.placeholder.setStyleSheet(
+            """
             QLabel {
                 color: #666666;
                 font-size: 14px;
             }
-        """)
+        """
+        )
         self.placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
+
         # Stack for switching between placeholder and details
         self.stack = QStackedWidget()
-        
+
         # Placeholder widget
         placeholder_widget = QWidget()
         placeholder_layout = QVBoxLayout(placeholder_widget)
         placeholder_layout.addStretch()
         placeholder_layout.addWidget(self.placeholder)
         placeholder_layout.addStretch()
-        
+
         # Details widget
         details_widget = QWidget()
         details_layout = QVBoxLayout(details_widget)
-        
+
         # Details content
         self.detail_title = SubtitleLabel("")
         self.username_label = QLabel("Username:")
         self.username_value = LineEdit(self)
         self.username_value.setReadOnly(True)
-        
+
         self.url_label = QLabel("URL:")
         self.url_value = LineEdit(self)
         self.url_value.setReadOnly(True)
-        
+
         self.notes_label = QLabel("Notes:")
         self.notes_value = LineEdit(self)
         self.notes_value.setReadOnly(True)
-        
+
         # Edit button
         self.edit_btn = PushButton("Edit")
-        
+
         # Add to details layout
         details_layout.addWidget(self.detail_title)
         details_layout.addWidget(self.username_label)
@@ -122,11 +123,11 @@ class DetailSidebar(QFrame):
         details_layout.addWidget(self.notes_value)
         details_layout.addWidget(self.edit_btn)
         details_layout.addStretch()
-        
+
         # Add both widgets to stack
         self.stack.addWidget(placeholder_widget)
         self.stack.addWidget(details_widget)
-        
+
         # Add stack to main layout
         layout.addWidget(self.stack)
 
@@ -137,7 +138,7 @@ class DetailSidebar(QFrame):
         self.url_value.setText(url)
         self.notes_value.setText(notes)
         self.stack.setCurrentIndex(1)  # Show details widget
-        
+
     def show_placeholder(self):
         """Show placeholder when no credential selected"""
         self.stack.setCurrentIndex(0)  # Show placeholder widget
@@ -196,81 +197,115 @@ class CredentialDialog(QDialog):
         )
 
 
+class CredentialsToolBar(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setStyleSheet(
+            """
+            QWidget {
+                background-color: #f8f8f8;
+                border-bottom: 1px solid #e0e0e0;
+            }
+            QToolButton {
+                border: none;
+                border-radius: 4px;
+                padding: 6px;
+                background-color: transparent;
+            }
+            QToolButton:hover {
+                background-color: #e8e8e8;
+            }
+            QToolButton:pressed {
+                background-color: #e0e0e0;
+            }
+        """
+        )
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(8, 4, 8, 4)
+        layout.setSpacing(4)
+
+        # Create buttons
+        self.add_btn = self._create_tool_button("Add Entry", "assets/add.svg")
+        self.edit_btn = self._create_tool_button("Edit Entry", "assets/edit.svg")
+        self.delete_btn = self._create_tool_button("Delete Entry", "assets/delete.svg")
+
+        # Add buttons to layout
+        layout.addWidget(self.add_btn)
+        layout.addWidget(self.edit_btn)
+        layout.addWidget(self.delete_btn)
+        layout.addStretch()  # Push buttons to left
+
+    def _create_tool_button(self, tooltip, icon_path):
+        button = QToolButton()
+        button.setIcon(QIcon(icon_path))
+        button.setToolTip(tooltip)
+        button.setIconSize(QSize(20, 20))
+        return button
+
+
 class CredentialsView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        layout = QHBoxLayout(self)
+        layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        # Left content area
+        # Add toolbar at top
+        self.toolbar = CredentialsToolBar()
+        layout.addWidget(self.toolbar)
+
+        # Content area
         content = QWidget()
-        content_layout = QVBoxLayout(content)
-        content_layout.setContentsMargins(20, 20, 20, 20)
-        
+        content_layout = QHBoxLayout(content)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Group sidebar
+        self.group_sidebar = GroupSidebar()
+        self.group_sidebar.groupSelected.connect(self.filter_credentials)
+        content_layout.addWidget(self.group_sidebar)
+
+        # Credential list area
+        cred_area = QWidget()
+        cred_layout = QHBoxLayout(cred_area)
+        cred_layout.setContentsMargins(20, 20, 0, 20)
+
+        # Credential list
         self.cred_list = QVBoxLayout()
         self.cred_list.setSpacing(2)
         self.cred_list.setAlignment(Qt.AlignmentFlag.AlignTop)
-        
-        self.add_button = PushButton("Add Credential")
-        self.add_button.clicked.connect(self.show_add_credential_dialog)
-        
-        content_layout.addLayout(self.cred_list)
-        content_layout.addWidget(self.add_button)
-        
+        cred_layout.addLayout(self.cred_list)
+
+        # Detail sidebar
         self.detail_sidebar = DetailSidebar()
-        
+        cred_layout.addWidget(self.detail_sidebar)
+
+        content_layout.addWidget(cred_area)
         layout.addWidget(content)
-        layout.addWidget(self.detail_sidebar)
-        
-        # Initialize credentials
-        self.load_credentials()
 
     def load_credentials(self):
-        """Load credentials into list"""
-        # Clear existing buttons
-        while self.cred_list.count():
-            item = self.cred_list.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+        """Load and display credentials"""
+        # Clear existing credentials
+        self.clear_credentials()
         
-        # Dummy data for testing
-        test_data = [
-            ("Email", "user@example.com", "mail.example.com"),
-            ("Social", "username123", "social.example.com"),
-            ("Work", "worker", "work.example.com")
+        # TODO: Load credentials from database
+        # For now, add some sample credentials
+        sample_creds = [
+            ("Gmail", "user@gmail.com", "https://gmail.com"),
+            ("GitHub", "username", "https://github.com"),
+            ("Netflix", "user@email.com", "https://netflix.com")
         ]
         
-        # Add credential buttons
-        for title, username, url in test_data:
-            btn = CredentialButton(title)
-            btn.clicked.connect(
-                lambda checked, t=title, u=username, url=url: 
-                self.show_credential_details(t, u, url)
+        for title, username, url in sample_creds:
+            cred_btn = CredentialButton(title)
+            cred_btn.clicked.connect(
+                lambda checked, t=title, u=username, l=url: 
+                self.detail_sidebar.update_details(t, u, l)
             )
-            self.cred_list.addWidget(btn)
-
-    def show_credential_details(self, title, username, url, notes=""):
-    # Update and show details
-        self.detail_sidebar.update_details(title, username, url, notes)
-    
-    # Uncheck other buttons 
-        for i in range(self.cred_list.count()):
-            btn = self.cred_list.itemAt(i).widget()
-            if isinstance(btn, CredentialButton):
-                # Only check matching button
-                btn.setChecked(btn.text() == title)
-
-    def show_add_credential_dialog(self):
-        dialog = CredentialDialog(self)
-        if dialog.exec():
-            title, username, password, url, notes = dialog.get_data()
-            print(f"Adding: {title}, {username}, {url}")  # Replace with DB call
-            self.load_credentials()  # Reload to show new credential
+            self.cred_list.addWidget(cred_btn)
 
     def clear_credentials(self):
-        """Reset view state"""
-        # Clear credential list
+        """Clear all credentials from view"""
         while self.cred_list.count():
             item = self.cred_list.takeAt(0)
             if item.widget():
@@ -278,3 +313,8 @@ class CredentialsView(QWidget):
                 
         # Reset sidebar
         self.detail_sidebar.show_placeholder()
+
+    def filter_credentials(self, group_name):
+        """Filter credentials by group"""
+        # TODO: Implement filtering
+        pass
