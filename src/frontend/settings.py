@@ -3,7 +3,8 @@ from PyQt6.QtWidgets import (
     QWidget, 
     QVBoxLayout,
     QGridLayout,
-    QLabel
+    QLabel,
+    QHBoxLayout
 )
 from qfluentwidgets import (
     PushButton,
@@ -14,6 +15,7 @@ from qfluentwidgets import (
     CardWidget
 )
 from PyQt6.QtCore import Qt
+from .audit import AuditLogCard
 
 class PasswordChangeCard(CardWidget):
     def __init__(self, parent=None):
@@ -109,26 +111,32 @@ class PasswordChangeCard(CardWidget):
         self.new_pw_input.clear()
         self.confirm_pw_input.clear()
 
+# settings.py
 class SettingsView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setup_ui()
 
     def setup_ui(self):
+        # Main vertical layout
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(40, 40, 40, 40)  # Add generous margins
+        layout.setContentsMargins(40, 40, 40, 40)
         layout.setSpacing(20)
 
-        # Container for cards
-        cards_layout = QVBoxLayout()
-        cards_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)  # Align cards to the left
+        # Horizontal container for cards
+        cards_layout = QHBoxLayout()
+        cards_layout.setSpacing(20)
         
         # Add password change card
         self.pw_change_card = PasswordChangeCard()
-        cards_layout.addWidget(self.pw_change_card)
+        self.pw_change_card.setFixedWidth(300)
+        cards_layout.addWidget(self.pw_change_card, 1)
+        
+        # Add audit log card
+        self.audit_log_card = AuditLogCard()
+        self.audit_log_card.setFixedWidth(600)
+        cards_layout.addWidget(self.audit_log_card, 2)
         
         # Add the cards layout to main layout
         layout.addLayout(cards_layout)
-        
-        # Add stretch to push everything to the top
         layout.addStretch()
