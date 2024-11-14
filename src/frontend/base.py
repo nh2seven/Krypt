@@ -15,6 +15,7 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from .topbar import TopToolBar
 from .cred import CredentialsView
 from .settings import SettingsView
+from .generator import PasswordGeneratorDialog
 
 
 class MainWindow(QMainWindow):
@@ -46,6 +47,8 @@ class MainWindow(QMainWindow):
         """
         )
 
+        self.last_active_tab = 0
+
         # Add top toolbar
         self.toolbar = TopToolBar(self)
         self.addToolBar(self.toolbar)
@@ -56,6 +59,10 @@ class MainWindow(QMainWindow):
         main_layout = QHBoxLayout(main_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
+
+        # Connect toolbar signals
+        self.toolbar.pageChanged.connect(self.handle_page_change)
+        self.toolbar.logoutClicked.connect(self.handle_logout)
 
         # Create stacked widget for content
         self.stack = QStackedWidget()
@@ -76,15 +83,24 @@ class MainWindow(QMainWindow):
         self.credentials_view = CredentialsView()
         self.stack.addWidget(self.credentials_view)
         
-        # Generator page (index 1)
-        generator_page = QWidget()
-        generator_layout = QVBoxLayout(generator_page)
-        generator_layout.addWidget(QLabel("Password Generator"))
-        self.stack.addWidget(generator_page)
-        
-        # Settings page (index 2)
+        # Settings page (index 1)
         self.settings_view = SettingsView()
         self.stack.addWidget(self.settings_view)
+
+    def show_generator_dialog(self):
+        """Show password generator dialog"""
+        dialog = PasswordGeneratorDialog(self)
+        dialog.exec()
+
+    def handle_page_change(self, index):
+        """Handle page change from toolbar"""
+        if index == 1:
+            self.show_generator_dialog()
+            # Revert to last active tab
+            self.toolbar.set_active_tab(self.last_active_tab)
+        else:
+            self.last_active_tab = index  # Update last active tab
+            self.stack.setCurrentIndex(index)
 
     def handle_logout(self):
         """Clean up and return to login screen"""
