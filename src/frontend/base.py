@@ -63,7 +63,11 @@ class MainWindow(QMainWindow):
         # Connect logout signal
         self.sidebar.logoutClicked.connect(self.handle_logout)
 
-    
+    def refresh_credentials(self):
+        """Refresh credentials list"""
+        if hasattr(self, 'credentials_view'):
+            self.credentials_view.load_credentials()
+
     def _setup_pages(self):
         """Setup all application pages"""
         # Home page
