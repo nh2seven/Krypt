@@ -18,7 +18,16 @@ from PyQt6.QtCore import Qt
 class PasswordChangeCard(CardWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setFixedWidth(350)
         self.setup_ui()
+
+        self.setStyleSheet("""
+            PasswordChangeCard {
+                background-color: white;
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+            }
+        """)
 
     def setup_ui(self):
         layout = QGridLayout(self)
@@ -107,12 +116,19 @@ class SettingsView(QWidget):
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setContentsMargins(40, 40, 40, 40)  # Add generous margins
         layout.setSpacing(20)
 
+        # Container for cards
+        cards_layout = QVBoxLayout()
+        cards_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)  # Align cards to the left
+        
         # Add password change card
         self.pw_change_card = PasswordChangeCard()
-        layout.addWidget(self.pw_change_card)
+        cards_layout.addWidget(self.pw_change_card)
+        
+        # Add the cards layout to main layout
+        layout.addLayout(cards_layout)
         
         # Add stretch to push everything to the top
         layout.addStretch()
