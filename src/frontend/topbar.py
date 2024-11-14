@@ -63,6 +63,7 @@ class TopToolBar(QToolBar):
         # Left section - Tabs
         self.passwords_btn = self._create_tab_button("Passwords", 0)
         self.generator_btn = self._create_tab_button("Generator", 1)
+        self.settings_btn = self._create_tab_button("Settings", 2)
 
         # Center section - Search
         self.search_box = QLineEdit()
