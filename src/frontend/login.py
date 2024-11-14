@@ -1,11 +1,8 @@
 from PyQt6.QtWidgets import (
     QWidget,
     QVBoxLayout,
-    QLabel,
     QLineEdit,
-    QPushButton,
     QHBoxLayout,
-    QScrollArea,
     QFrame,
 )
 from PyQt6.QtCore import pyqtSignal, Qt
@@ -73,6 +70,12 @@ class LoginScreen(QWidget):
         super().__init__()
         self.setWindowTitle("Login")
         self.setFixedSize(700, 500)
+        self.setWindowFlags(
+            Qt.WindowType.Window |
+            Qt.WindowType.CustomizeWindowHint |
+            Qt.WindowType.WindowCloseButtonHint |
+            Qt.WindowType.WindowMinimizeButtonHint
+        )
         self.current_user = None
         self.initUI()
 
