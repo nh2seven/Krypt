@@ -215,35 +215,42 @@ class LoginScreen(QWidget):
         username, ok = QInputDialog.getText(self, "New User", "Enter username:")
         if not ok or not username:
             return
-
+    
         password, ok = QInputDialog.getText(
             self, "New User", "Enter password:", QLineEdit.EchoMode.Password
         )
         if not ok or not password:
             return
-
+    
         db_path = f"db/users/{username}.db"
         if os.path.exists(db_path):
             InfoBar.error(
-                title="Error",
+                title="Error", 
                 content="User already exists",
                 position=InfoBarPosition.TOP,
                 duration=2000,
-                parent=self,
+                parent=self
             )
             return
 
         user = User(db_path, username, password)
-        user.create(password)
-        self.add_user_card(username)
-
-        InfoBar.success(
-            title="Success",
-            content="User created successfully",
-            position=InfoBarPosition.TOP,
-            duration=2000,
-            parent=self,
-        )
+        if user.create(password):
+            self.add_user_card(username)
+            InfoBar.success(
+                title="Success",
+                content="User created successfully",
+                position=InfoBarPosition.TOP, 
+                duration=2000,
+                parent=self
+            )
+        else:
+            InfoBar.error(
+                title="Error",
+                content="Failed to create user",
+                position=InfoBarPosition.TOP,
+                duration=2000, 
+                parent=self
+            )
 
     def delete_user(self):
         """Delete selected user"""
