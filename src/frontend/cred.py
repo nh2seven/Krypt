@@ -38,6 +38,7 @@ class CredentialButton(PushButton):
                 margin: 2px 8px;
                 background-color: transparent;
                 font-size: 14px;
+                color: #000000;
             }
             PushButton:checked {
                 background-color: #e6e6e6;
@@ -248,6 +249,7 @@ class CredentialsToolBar(QWidget):
 class CredentialsView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.current_button = None
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
@@ -355,11 +357,8 @@ class CredentialsView(QWidget):
 
     def load_credentials(self):
         """Load and display credentials"""
-        # Clear existing credentials
         self.clear_credentials()
 
-        # TODO: Load credentials from database
-        # For now, add some sample credentials
         sample_creds = [
             ("Gmail", "user@gmail.com", "https://gmail.com"),
             ("GitHub", "username", "https://github.com"),
@@ -369,11 +368,25 @@ class CredentialsView(QWidget):
         for title, username, url in sample_creds:
             cred_btn = CredentialButton(title)
             cred_btn.clicked.connect(
-                lambda checked, t=title, u=username, l=url: self.detail_sidebar.update_details(
-                    t, u, l
-                )
+                lambda checked, btn=cred_btn, t=title, u=username, l=url: 
+                self._handle_credential_click(btn, t, u, l)
             )
             self.cred_list.addWidget(cred_btn)
+
+    def _handle_credential_click(self, button, title, username, url):
+        """Handle credential button click"""
+        if self.current_button == button and button.isChecked():
+            button.setChecked(False)
+            self.current_button = None
+            self.detail_sidebar.show_placeholder()
+            return
+
+        if self.current_button:
+            self.current_button.setChecked(False)
+
+        self.current_button = button
+        button.setChecked(True)
+        self.detail_sidebar.update_details(title, username, url)
 
     def clear_credentials(self):
         """Clear all credentials from view"""
@@ -382,7 +395,7 @@ class CredentialsView(QWidget):
             if item.widget():
                 item.widget().deleteLater()
 
-        # Reset sidebar
+        self.current_button = None
         self.detail_sidebar.show_placeholder()
 
     def filter_credentials(self, group_name):
