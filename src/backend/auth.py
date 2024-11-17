@@ -1,19 +1,6 @@
 import os
-import sqlite3 as sql
-from contextlib import contextmanager
 from .init import InitUser
-
-
-@contextmanager
-def db_connect(database):
-    connection = sql.connect(database, check_same_thread=False, cached_statements=32)
-    cursor = connection.cursor()
-    try:
-        yield cursor
-    finally:
-        connection.commit()
-        cursor.close()
-        connection.close()
+from src.modules.contextmanager import db_connect
 
 
 class Admin:
