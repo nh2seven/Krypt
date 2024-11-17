@@ -10,17 +10,21 @@ from PyQt6.QtWidgets import (
     QStackedWidget,
     QToolButton,
     QScrollArea,
+    QMessageBox,
 )
-from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QSize
+from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QIcon
 
 from qfluentwidgets import (
     PushButton,
     LineEdit,
     SubtitleLabel,
+    TransparentPushButton,
 )
 
 from .sidebar import GroupSidebar
+from src.backend.user import Credentials
+from src.modules.contextmanager import db_connect
 
 
 class CredentialButton(PushButton):
@@ -55,95 +59,171 @@ class DetailSidebar(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFixedWidth(350)
-        self.setStyleSheet(
-            """
+        self.setStyleSheet("""
             QFrame {
                 background-color: #f5f5f5;
                 border-left: 1px solid #e0e0e0;
             }
-        """
-        )
+            QLabel {
+                color: #202020;
+                font-size: 14px;
+            }
+            .field-label {
+                color: #666666;
+                font-size: 14px;
+                margin-bottom: 4px;
+            }
+            .field-value {
+                color: #202020;
+                font-size: 14px;
+                padding: 8px 12px;
+                background-color: white;
+                border: 1px solid #e0e0e0;
+                border-radius: 4px;
+            }
+            SubtitleLabel {
+                font-size: 24px;
+                font-weight: 700;
+                color: #000000;
+                margin-bottom: 20px;
+            }
+        """)
 
-        # Create layout
+        # Create main layout
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
 
-        # Header
-        self.title = SubtitleLabel("Credentials")
-        layout.addWidget(self.title)
+        # Create title
+        self.detail_title = SubtitleLabel("")
+        self.detail_title.setObjectName("detail_title")
+        layout.addWidget(self.detail_title)
 
-        # Placeholder content
-        self.placeholder = QLabel("Select a credential to view details")
-        self.placeholder.setStyleSheet(
-            """
-            QLabel {
-                color: #666666;
-                font-size: 14px;
-            }
-        """
-        )
-        self.placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        # Stack for switching between placeholder and details
+        # Create stack for switching between placeholder and details
         self.stack = QStackedWidget()
 
-        # Placeholder widget
+        # Create placeholder widget
         placeholder_widget = QWidget()
         placeholder_layout = QVBoxLayout(placeholder_widget)
+        self.placeholder = QLabel("Select a credential to view details")
+        self.placeholder.setStyleSheet("color: #666666; font-size: 14px;")
+        self.placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
         placeholder_layout.addStretch()
         placeholder_layout.addWidget(self.placeholder)
         placeholder_layout.addStretch()
 
-        # Details widget
+        # Create details widget
         details_widget = QWidget()
         details_layout = QVBoxLayout(details_widget)
 
-        # Details content
-        self.detail_title = SubtitleLabel("")
-        self.username_label = QLabel("Username:")
-        self.username_value = LineEdit(self)
-        self.username_value.setReadOnly(True)
+        # Create scroll area for content
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setStyleSheet(
+            """
+            QScrollArea {
+                border: none;
+                background-color: #f5f5f5;
+            }
+            QWidget#scrollContent {
+                background-color: #f5f5f5;
+            }
+        """
+        )
 
-        self.url_label = QLabel("URL:")
-        self.url_value = LineEdit(self)
-        self.url_value.setReadOnly(True)
+        # Create content widget for scroll area
+        content = QWidget()
+        content.setObjectName("scrollContent")
+        self.content_layout = QVBoxLayout(content)
+        self.content_layout.setSpacing(10)
+        scroll.setWidget(content)
 
-        self.notes_label = QLabel("Notes:")
-        self.notes_value = LineEdit(self)
-        self.notes_value.setReadOnly(True)
+        # Add scroll to details layout
+        details_layout.addWidget(scroll)
 
-        # Edit button
+        # Username section
+        self.username_label = QLabel("Username")
+        self.username_value = QLabel()
+        self.username_value.setWordWrap(True)
+        self.username_value.setProperty("class", "field-value")
+        self.content_layout.addWidget(self.username_label)
+        self.content_layout.addWidget(self.username_value)
+
+        # Password section
+        self.password_label = QLabel("Password")
+        self.password_container = QWidget()
+        password_layout = QHBoxLayout(self.password_container)
+        password_layout.setContentsMargins(0, 0, 0, 0)
+        self.password_value = QLabel()
+        self.password_value.setWordWrap(True)
+        self.password_value.setProperty("class", "field-value")
+        self.toggle_password_btn = TransparentPushButton("Show")
+        self.toggle_password_btn.setMaximumWidth(60)
+        self.toggle_password_btn.clicked.connect(self.toggle_password_visibility)
+        password_layout.addWidget(self.password_value)
+        password_layout.addWidget(self.toggle_password_btn)
+        self.content_layout.addWidget(self.password_label)
+        self.content_layout.addWidget(self.password_container)
+
+        # URL section
+        self.url_label = QLabel("URL")
+        self.url_value = QLabel()
+        self.url_value.setWordWrap(True)
+        self.url_value.setProperty("class", "field-value")
+        self.content_layout.addWidget(self.url_label)
+        self.content_layout.addWidget(self.url_value)
+
+        # Notes section
+        self.notes_label = QLabel("Notes")
+        self.notes_value = QLabel()
+        self.notes_value.setWordWrap(True)
+        self.notes_value.setProperty("class", "field-value")
+        self.content_layout.addWidget(self.notes_label)
+        self.content_layout.addWidget(self.notes_value)
+
+        # Add stretch to push content up
+        self.content_layout.addStretch()
+
+        # Add edit button at bottom
         self.edit_btn = PushButton("Edit")
-
-        # Add to details layout
-        details_layout.addWidget(self.detail_title)
-        details_layout.addWidget(self.username_label)
-        details_layout.addWidget(self.username_value)
-        details_layout.addWidget(self.url_label)
-        details_layout.addWidget(self.url_value)
-        details_layout.addWidget(self.notes_label)
-        details_layout.addWidget(self.notes_value)
         details_layout.addWidget(self.edit_btn)
-        details_layout.addStretch()
 
-        # Add both widgets to stack
+        # Add widgets to stack
         self.stack.addWidget(placeholder_widget)
         self.stack.addWidget(details_widget)
 
         # Add stack to main layout
         layout.addWidget(self.stack)
 
-    def update_details(self, title, username, url, notes=""):
+        # Initialize password toggle state
+        self._password = ""
+        self._password_hidden = True
+
+    def update_details(self, title, username, password, url="", notes=""):
         """Update sidebar with credential details"""
         self.detail_title.setText(title)
         self.username_value.setText(username)
+        self._password = password
+        self.password_value.setText("•" * len(password))
         self.url_value.setText(url)
         self.notes_value.setText(notes)
-        self.stack.setCurrentIndex(1)  # Show details widget
+        self.stack.setCurrentIndex(1)
+        self._password_hidden = True
+        self.toggle_password_btn.setText("Show")
+
+    def toggle_password_visibility(self):
+        """Toggle password visibility"""
+        if self._password_hidden:
+            self.password_value.setText(self._password)
+            self.toggle_password_btn.setText("Hide")
+        else:
+            self.password_value.setText("•" * len(self._password))
+            self.toggle_password_btn.setText("Show")
+        self._password_hidden = not self._password_hidden
 
     def show_placeholder(self):
         """Show placeholder when no credential selected"""
-        self.stack.setCurrentIndex(0)  # Show placeholder widget
+        self.stack.setCurrentIndex(0)
 
 
 class CredentialDialog(QDialog):
@@ -247,9 +327,13 @@ class CredentialsToolBar(QWidget):
 
 
 class CredentialsView(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, db_path=None):
         super().__init__(parent)
+        self.db_path = db_path
+        self.cred_manager = Credentials(db_path) if db_path else None
         self.current_button = None
+
+        # Main layout
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
@@ -257,6 +341,9 @@ class CredentialsView(QWidget):
         content = QWidget()
         content_layout = QHBoxLayout(content)
         content_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Create DetailSidebar first
+        self.detail_sidebar = DetailSidebar()
 
         # Group sidebar
         self.group_sidebar = GroupSidebar()
@@ -273,7 +360,7 @@ class CredentialsView(QWidget):
             QWidget {
                 background-color: white;
             }
-        """
+            """
         )
 
         # Action buttons toolbar
@@ -283,7 +370,7 @@ class CredentialsView(QWidget):
             QWidget {
                 border-bottom: 1px solid #e0e0e0;
             }
-        """
+            """
         )
         buttons_layout = QHBoxLayout(buttons_widget)
         buttons_layout.setContentsMargins(10, 10, 10, 10)
@@ -291,13 +378,17 @@ class CredentialsView(QWidget):
 
         # Create buttons
         self.add_btn = self._create_tool_button("Add Entry", "assets/add.svg")
-        self.edit_btn = self._create_tool_button("Edit Entry", "assets/edit.svg")
         self.delete_btn = self._create_tool_button("Delete Entry", "assets/delete.svg")
 
+        # Add buttons to layout
         buttons_layout.addWidget(self.add_btn)
-        buttons_layout.addWidget(self.edit_btn)
         buttons_layout.addWidget(self.delete_btn)
         buttons_layout.addStretch()
+
+        # Connect button signals
+        self.add_btn.clicked.connect(self.add_credential)
+        self.delete_btn.clicked.connect(self.delete_credential)
+        self.detail_sidebar.edit_btn.clicked.connect(self.edit_credential)
 
         cred_layout.addWidget(buttons_widget, 0, Qt.AlignmentFlag.AlignTop)
 
@@ -305,7 +396,8 @@ class CredentialsView(QWidget):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll.setStyleSheet("""
+        scroll.setStyleSheet(
+            """
             QScrollArea {
                 border: none;
                 background-color: transparent;
@@ -313,7 +405,8 @@ class CredentialsView(QWidget):
             QWidget {
                 background-color: white;
             }
-        """)
+        """
+        )
 
         # Container for credentials
         self.list_container = QWidget()
@@ -325,12 +418,10 @@ class CredentialsView(QWidget):
         cred_layout.addWidget(scroll)
 
         content_layout.addWidget(cred_area)
-
-        # Detail sidebar
-        self.detail_sidebar = DetailSidebar()
         content_layout.addWidget(self.detail_sidebar)
 
         layout.addWidget(content)
+        self.load_credentials()
 
     def _create_tool_button(self, tooltip, icon_path):
         button = QToolButton()
@@ -356,24 +447,27 @@ class CredentialsView(QWidget):
         return button
 
     def load_credentials(self):
-        """Load and display credentials"""
+        """Load and display credentials from database"""
         self.clear_credentials()
 
-        sample_creds = [
-            ("Gmail", "user@gmail.com", "https://gmail.com"),
-            ("GitHub", "username", "https://github.com"),
-            ("Netflix", "user@email.com", "https://netflix.com"),
-        ]
+        if not self.cred_manager:
+            return
 
-        for title, username, url in sample_creds:
+        with db_connect(self.db_path) as cur:
+            cur.execute("SELECT title, username, password, url, notes FROM credentials")
+            credentials = cur.fetchall()
+
+        for cred in credentials:
+            title, username, password, url, notes = cred
             cred_btn = CredentialButton(title)
             cred_btn.clicked.connect(
-                lambda checked, btn=cred_btn, t=title, u=username, l=url: 
-                self._handle_credential_click(btn, t, u, l)
+                lambda checked, btn=cred_btn, t=title, u=username, p=password, l=url, n=notes: self._handle_credential_click(
+                    btn, t, u, p, l, n
+                )
             )
             self.cred_list.addWidget(cred_btn)
 
-    def _handle_credential_click(self, button, title, username, url):
+    def _handle_credential_click(self, button, title, username, password, url, notes):
         """Handle credential button click"""
         if self.current_button == button and button.isChecked():
             button.setChecked(False)
@@ -386,7 +480,7 @@ class CredentialsView(QWidget):
 
         self.current_button = button
         button.setChecked(True)
-        self.detail_sidebar.update_details(title, username, url)
+        self.detail_sidebar.update_details(title, username, password, url, notes)
 
     def clear_credentials(self):
         """Clear all credentials from view"""
@@ -402,3 +496,89 @@ class CredentialsView(QWidget):
         """Filter credentials by group"""
         # TODO: Implement filtering
         pass
+
+    def add_credential(self):
+        """Add new credential"""
+        dialog = CredentialDialog(self)
+        if dialog.exec():
+            title, username, password, url, notes = dialog.get_data()
+
+            try:
+                self.cred_manager.add_cred(
+                    title=title,
+                    username=username,
+                    password=password,
+                    url=url,
+                    notes=notes,
+                    tags="",  # TODO: Implement tags
+                    expiration="",  # TODO: Implement expiration
+                    group_id=None,  # TODO: Implement groups
+                )
+                self.load_credentials()  # Refresh view
+            except Exception as e:
+                QMessageBox.critical(
+                    self, "Error", f"Failed to add credential: {str(e)}"
+                )
+
+    def delete_credential(self):
+        """Delete selected credential"""
+        if not self.current_button:
+            return
+
+        title = self.current_button.text()
+        reply = QMessageBox.question(
+            self,
+            "Confirm Delete",
+            f"Are you sure you want to delete credential '{title}'?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                self.cred_manager.remove_cred(title)
+                self.load_credentials()  # Refresh view
+            except Exception as e:
+                QMessageBox.critical(
+                    self, "Error", f"Failed to delete credential: {str(e)}"
+                )
+
+    def edit_credential(self):
+        """Edit selected credential"""
+        if not self.current_button:
+            return
+
+        title = self.current_button.text()
+
+        # Get current values
+        with db_connect(self.db_path) as cur:
+            cur.execute(
+                "SELECT username, url, notes FROM credentials WHERE title = ?", (title,)
+            )
+            cred = cur.fetchone()
+
+        if not cred:
+            return
+
+        username, url, notes = cred
+        dialog = CredentialDialog(self, title, username, url)
+
+        if dialog.exec():
+            new_title, new_username, new_password, new_url, new_notes = (
+                dialog.get_data()
+            )
+            try:
+                self.cred_manager.modify_cred(
+                    title=title,  # Original title for WHERE clause
+                    username=new_username,
+                    password=new_password,
+                    url=new_url,
+                    notes=new_notes,
+                    tags="",  # TODO: Implement tags
+                    expiration="",  # TODO: Implement expiration
+                    group_id=None,  # TODO: Implement groups
+                )
+                self.load_credentials()  # Refresh view
+            except Exception as e:
+                QMessageBox.critical(
+                    self, "Error", f"Failed to update credential: {str(e)}"
+                )
