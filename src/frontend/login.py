@@ -1,22 +1,9 @@
-from PyQt6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QLineEdit,
-    QHBoxLayout,
-    QFrame,
-)
+import os
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLineEdit, QHBoxLayout, QFrame, QInputDialog, QMessageBox
+from qfluentwidgets import CardWidget, ScrollArea, PushButton, InfoBar, LineEdit, TitleLabel, SubtitleLabel, InfoBarPosition
 from PyQt6.QtCore import pyqtSignal, Qt
 from PyQt6.QtGui import QIcon
-from qfluentwidgets import (
-    CardWidget,
-    ScrollArea,
-    PushButton,
-    InfoBar,
-    LineEdit,
-    TitleLabel,
-    SubtitleLabel,
-    InfoBarPosition,
-)
+from src.backend.auth import User
 
 
 class UserCard(CardWidget):
@@ -70,13 +57,15 @@ class LoginScreen(QWidget):
         self.setWindowTitle("Login")
         self.setFixedSize(700, 500)
         self.setWindowFlags(
-            Qt.WindowType.Window |
-            Qt.WindowType.CustomizeWindowHint |
-            Qt.WindowType.WindowCloseButtonHint |
-            Qt.WindowType.WindowMinimizeButtonHint
+            Qt.WindowType.Window
+            | Qt.WindowType.CustomizeWindowHint
+            | Qt.WindowType.WindowCloseButtonHint
+            | Qt.WindowType.WindowMinimizeButtonHint
         )
         self.current_user = None
+        self.user_auth = None
         self.initUI()
+        self.load_users()
 
     def initUI(self):
         # Main layout
@@ -157,14 +146,13 @@ class LoginScreen(QWidget):
         layout.addWidget(left_panel)
         layout.addWidget(right_panel)
 
-        # Add sample users
-        self.add_sample_users()
-
-    def add_sample_users(self):
-        # Add some sample users
-        sample_users = ["admin", "user1", "user2"]
-        for username in sample_users:
-            self.add_user_card(username)
+    def load_users(self):
+        """Load existing users from users directory"""
+        os.makedirs("db/users", exist_ok=True)
+        for file in os.listdir("db/users"):
+            if file.endswith(".db"):
+                username = os.path.splitext(file)[0]
+                self.add_user_card(username)
 
     def add_user_card(self, username):
         card = UserCard(username)
@@ -176,21 +164,11 @@ class LoginScreen(QWidget):
         self.user_label.setText(f"Welcome back, {username}")
         self.password_input.setFocus()
 
-    def add_user(self):
-        # TODO: Implement user creation
-        pass
-
-    def delete_user(self):
-        # TODO: Implement user deletion
-        pass
-
     def handle_login(self):
         if not self.current_user:
             InfoBar.error(
                 title="Error",
                 content="Please select a user first",
-                orient=Qt.Orientation.Horizontal,
-                isClosable=True,
                 position=InfoBarPosition.TOP,
                 duration=2000,
                 parent=self,
@@ -199,13 +177,15 @@ class LoginScreen(QWidget):
 
         password = self.password_input.text()
 
-        # Sample authentication
-        if self.current_user == "admin" and password == "password":
+        # Create auth instance for selected user
+        user_db = f"db/users/{self.current_user}.db"  # Adjust path as needed
+        self.user_auth = User(user_db, self.current_user, password)
+
+        # Attempt login
+        if self.user_auth.login():
             InfoBar.success(
                 title="Success",
                 content="Login successful",
-                orient=Qt.Orientation.Horizontal,
-                isClosable=True,
                 position=InfoBarPosition.TOP,
                 duration=1000,
                 parent=self,
@@ -215,8 +195,87 @@ class LoginScreen(QWidget):
             InfoBar.error(
                 title="Error",
                 content="Invalid credentials",
-                orient=Qt.Orientation.Horizontal,
-                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=2000,
+                parent=self,
+            )
+
+    def refresh_users(self):
+        """Clear and reload user cards"""
+        while self.cards_layout.count():
+            item = self.cards_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
+        self.load_users()
+
+    def add_user(self):
+        """Create a new user with password"""
+        username, ok = QInputDialog.getText(self, "New User", "Enter username:")
+        if not ok or not username:
+            return
+
+        password, ok = QInputDialog.getText(
+            self, "New User", "Enter password:", QLineEdit.EchoMode.Password
+        )
+        if not ok or not password:
+            return
+
+        db_path = f"db/users/{username}.db"
+        if os.path.exists(db_path):
+            InfoBar.error(
+                title="Error",
+                content="User already exists",
+                position=InfoBarPosition.TOP,
+                duration=2000,
+                parent=self,
+            )
+            return
+
+        user = User(db_path, username, password)
+        user.create(password)
+        self.add_user_card(username)
+
+        InfoBar.success(
+            title="Success",
+            content="User created successfully",
+            position=InfoBarPosition.TOP,
+            duration=2000,
+            parent=self,
+        )
+
+    def delete_user(self):
+        """Delete selected user"""
+        if not self.current_user:
+            InfoBar.error(
+                title="Error",
+                content="Please select a user first",
+                position=InfoBarPosition.TOP,
+                duration=2000,
+                parent=self,
+            )
+            return
+
+        reply = QMessageBox.question(
+            self,
+            "Confirm Deletion",
+            f"Are you sure you want to delete user {self.current_user}?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+
+        if reply == QMessageBox.StandardButton.No:
+            return
+
+        db_path = f"db/users/{self.current_user}.db"
+        if os.path.exists(db_path):
+            os.remove(db_path)
+            self.clear_fields()
+            self.refresh_users()
+
+            InfoBar.success(
+                title="Success",
+                content="User deleted successfully",
                 position=InfoBarPosition.TOP,
                 duration=2000,
                 parent=self,
@@ -224,10 +283,8 @@ class LoginScreen(QWidget):
 
     def clear_fields(self):
         """Reset login form state"""
-        # Reset user selection
         self.current_user = None
         self.user_label.setText("Select a user to login")
-        
         self.password_input.clear()
         self.password_input.setPlaceholderText("Enter password")
         self.password_input.clearFocus()
