@@ -1,35 +1,30 @@
-# settings.py
-from PyQt6.QtWidgets import (
-    QWidget, 
-    QVBoxLayout,
-    QGridLayout,
-    QLabel,
-    QHBoxLayout
-)
-from qfluentwidgets import (
-    PushButton,
-    LineEdit,
-    InfoBar,
-    InfoBarPosition,
-    TitleLabel,
-    CardWidget
-)
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QGridLayout, QLabel, QHBoxLayout
+from qfluentwidgets import PushButton, LineEdit, InfoBar, InfoBarPosition, TitleLabel, CardWidget
 from PyQt6.QtCore import Qt
 from .audit import AuditLogCard
+from src.backend.auth import User
+
 
 class PasswordChangeCard(CardWidget):
-    def __init__(self, parent=None):
+    def __init__(self, db_path, username, parent=None):
         super().__init__(parent)
+        self.db_path = db_path
+        self.username = username
+        self.user = User(db_path, username, None)
+        self.setFixedWidth(350)
+        self.setup_ui()
         self.setFixedWidth(350)
         self.setup_ui()
 
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             PasswordChangeCard {
                 background-color: white;
                 border: 1px solid #e0e0e0;
                 border-radius: 8px;
             }
-        """)
+        """
+        )
 
     def setup_ui(self):
         layout = QGridLayout(self)
@@ -71,7 +66,7 @@ class PasswordChangeCard(CardWidget):
         new_pw = self.new_pw_input.text()
         confirm_pw = self.confirm_pw_input.text()
 
-        # Basic validation
+        # Validation
         if not all([current_pw, new_pw, confirm_pw]):
             self.show_error("All fields are required")
             return
@@ -80,9 +75,12 @@ class PasswordChangeCard(CardWidget):
             self.show_error("New passwords do not match")
             return
 
-        # TODO: Add actual password change logic here
-        self.show_success("Password changed successfully")
-        self.clear_fields()
+        # Attempt password change
+        if self.user.change_password(current_pw, new_pw):
+            self.show_success("Password changed successfully!")
+            self.clear_fields()
+        else:
+            self.show_error("Current password is incorrect.")
 
     def show_error(self, message):
         InfoBar.error(
@@ -92,7 +90,7 @@ class PasswordChangeCard(CardWidget):
             isClosable=True,
             position=InfoBarPosition.TOP,
             duration=3000,
-            parent=self
+            parent=self,
         )
 
     def show_success(self, message):
@@ -103,7 +101,7 @@ class PasswordChangeCard(CardWidget):
             isClosable=True,
             position=InfoBarPosition.TOP,
             duration=3000,
-            parent=self
+            parent=self,
         )
 
     def clear_fields(self):
@@ -111,32 +109,28 @@ class PasswordChangeCard(CardWidget):
         self.new_pw_input.clear()
         self.confirm_pw_input.clear()
 
-# settings.py
+
 class SettingsView(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, db_path, username, parent=None):
         super().__init__(parent)
+        self.db_path = db_path
+        self.username = username
         self.setup_ui()
 
     def setup_ui(self):
-        # Main vertical layout
         layout = QVBoxLayout(self)
         layout.setContentsMargins(40, 40, 40, 40)
         layout.setSpacing(20)
-
-        # Horizontal container for cards
         cards_layout = QHBoxLayout()
         cards_layout.setSpacing(20)
-        
-        # Add password change card
-        self.pw_change_card = PasswordChangeCard()
+
+        self.pw_change_card = PasswordChangeCard(self.db_path, self.username)
         self.pw_change_card.setFixedWidth(300)
         cards_layout.addWidget(self.pw_change_card, 1)
-        
-        # Add audit log card
+
         self.audit_log_card = AuditLogCard()
         self.audit_log_card.setFixedWidth(600)
         cards_layout.addWidget(self.audit_log_card, 2)
-        
-        # Add the cards layout to main layout
+
         layout.addLayout(cards_layout)
         layout.addStretch()
