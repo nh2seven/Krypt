@@ -14,8 +14,6 @@ class PasswordChangeCard(CardWidget):
         self.setFixedWidth(350)
         self.setup_ui()
         self.setFixedWidth(350)
-        self.setup_ui()
-
         self.setStyleSheet(
             """
             PasswordChangeCard {
