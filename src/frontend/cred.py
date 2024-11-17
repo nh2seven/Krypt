@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
     QFrame,
     QStackedWidget,
     QToolButton,
+    QScrollArea,
 )
 from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QSize
 from PyQt6.QtGui import QIcon
@@ -249,11 +250,6 @@ class CredentialsView(QWidget):
         super().__init__(parent)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-
-        # Add toolbar at top
-        self.toolbar = CredentialsToolBar()
-        layout.addWidget(self.toolbar)
 
         # Content area
         content = QWidget()
@@ -267,40 +263,115 @@ class CredentialsView(QWidget):
 
         # Credential list area
         cred_area = QWidget()
-        cred_layout = QHBoxLayout(cred_area)
-        cred_layout.setContentsMargins(20, 20, 0, 20)
+        cred_layout = QVBoxLayout(cred_area)
+        cred_layout.setContentsMargins(5, 5, 5, 5)
+        cred_layout.setSpacing(10)
+        cred_area.setStyleSheet(
+            """
+            QWidget {
+                background-color: white;
+            }
+        """
+        )
 
-        # Credential list
-        self.cred_list = QVBoxLayout()
+        # Action buttons toolbar
+        buttons_widget = QWidget()
+        buttons_widget.setStyleSheet(
+            """
+            QWidget {
+                border-bottom: 1px solid #e0e0e0;
+            }
+        """
+        )
+        buttons_layout = QHBoxLayout(buttons_widget)
+        buttons_layout.setContentsMargins(10, 10, 10, 10)
+        buttons_layout.setSpacing(4)
+
+        # Create buttons
+        self.add_btn = self._create_tool_button("Add Entry", "assets/add.svg")
+        self.edit_btn = self._create_tool_button("Edit Entry", "assets/edit.svg")
+        self.delete_btn = self._create_tool_button("Delete Entry", "assets/delete.svg")
+
+        buttons_layout.addWidget(self.add_btn)
+        buttons_layout.addWidget(self.edit_btn)
+        buttons_layout.addWidget(self.delete_btn)
+        buttons_layout.addStretch()
+
+        cred_layout.addWidget(buttons_widget, 0, Qt.AlignmentFlag.AlignTop)
+
+        # Scrollable credentials list
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setStyleSheet("""
+            QScrollArea {
+                border: none;
+                background-color: transparent;
+            }
+            QWidget {
+                background-color: white;
+            }
+        """)
+
+        # Container for credentials
+        self.list_container = QWidget()
+        self.cred_list = QVBoxLayout(self.list_container)
         self.cred_list.setSpacing(2)
         self.cred_list.setAlignment(Qt.AlignmentFlag.AlignTop)
-        cred_layout.addLayout(self.cred_list)
+
+        scroll.setWidget(self.list_container)
+        cred_layout.addWidget(scroll)
+
+        content_layout.addWidget(cred_area)
 
         # Detail sidebar
         self.detail_sidebar = DetailSidebar()
-        cred_layout.addWidget(self.detail_sidebar)
+        content_layout.addWidget(self.detail_sidebar)
 
-        content_layout.addWidget(cred_area)
         layout.addWidget(content)
+
+    def _create_tool_button(self, tooltip, icon_path):
+        button = QToolButton()
+        button.setIcon(QIcon(icon_path))
+        button.setToolTip(tooltip)
+        button.setIconSize(QSize(20, 20))
+        button.setStyleSheet(
+            """
+            QToolButton {
+                border: none;
+                border-radius: 4px;
+                padding: 6px;
+                background-color: transparent;
+            }
+            QToolButton:hover {
+                background-color: #e8e8e8;
+            }
+            QToolButton:pressed {
+                background-color: #e0e0e0;
+            }
+        """
+        )
+        return button
 
     def load_credentials(self):
         """Load and display credentials"""
         # Clear existing credentials
         self.clear_credentials()
-        
+
         # TODO: Load credentials from database
         # For now, add some sample credentials
         sample_creds = [
             ("Gmail", "user@gmail.com", "https://gmail.com"),
             ("GitHub", "username", "https://github.com"),
-            ("Netflix", "user@email.com", "https://netflix.com")
+            ("Netflix", "user@email.com", "https://netflix.com"),
         ]
-        
+
         for title, username, url in sample_creds:
             cred_btn = CredentialButton(title)
             cred_btn.clicked.connect(
-                lambda checked, t=title, u=username, l=url: 
-                self.detail_sidebar.update_details(t, u, l)
+                lambda checked, t=title, u=username, l=url: self.detail_sidebar.update_details(
+                    t, u, l
+                )
             )
             self.cred_list.addWidget(cred_btn)
 
@@ -310,7 +381,7 @@ class CredentialsView(QWidget):
             item = self.cred_list.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
-                
+
         # Reset sidebar
         self.detail_sidebar.show_placeholder()
 
