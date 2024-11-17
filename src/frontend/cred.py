@@ -231,10 +231,46 @@ class CredentialDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Edit Credential" if title else "Add Credential")
         self.setFixedWidth(400)
+        self.setStyleSheet("""
+            QDialog {
+                background-color: white;
+            }
+            QLabel {
+                color: #202020;
+                font-size: 14px;
+            }
+            LineEdit {
+                padding: 8px 12px;
+                border: 1px solid #e0e0e0;
+                border-radius: 4px;
+                background-color: white;
+                font-size: 14px;
+                color: #202020;
+            }
+            LineEdit:focus {
+                border: 1px solid #0078d4;
+            }
+            PushButton {
+                padding: 8px 16px;
+                border: none;
+                border-radius: 4px;
+                background-color: #0078d4;
+                color: white;
+                font-size: 14px;
+            }
+            PushButton:hover {
+                background-color: #106ebe;
+            }
+            PushButton:pressed {
+                background-color: #005a9e;
+            }
+        """)
+
         layout = QGridLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(12)
 
+        # Create fields with consistent styling
         self.title_label = QLabel("Title:")
         self.title_input = LineEdit(self)
         self.title_input.setText(title)
@@ -257,6 +293,7 @@ class CredentialDialog(QDialog):
         self.save_button = PushButton("Save")
         self.save_button.clicked.connect(self.accept)
 
+        # Layout fields with proper spacing
         layout.addWidget(self.title_label, 0, 0)
         layout.addWidget(self.title_input, 0, 1)
         layout.addWidget(self.username_label, 1, 0)
