@@ -93,7 +93,7 @@ class MainWindow(QMainWindow):
             self.toolbar.set_active_tab(toolbar_index)
         elif index == 2:  # Settings tab
             self.last_active_tab = 2
-            self.stack.setCurrentIndex(2)
+            self.stack.setCurrentIndex(1)
         else:  # Credentials tab
             self.last_active_tab = 0
             self.stack.setCurrentIndex(0)
