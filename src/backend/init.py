@@ -14,36 +14,6 @@ def db_connect(database):
         connection.close()
 
 
-class InitApp:
-    def __init__(self, app_db):
-        self.app_db = app_db
-
-    def init_tables(self):
-        with db_connect(self.app_db) as cur:
-            init_auditlog = """
-            CREATE TABLE IF NOT EXISTS auditlog (
-            log_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            action_type TEXT DEFAULT "None",
-            action_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            details TEXT DEFAULT "None"
-            );
-            """
-            init_admin = """
-            CREATE TABLE IF NOT EXISTS admin (
-            admin_id INTEGER PRIMARY KEY UNIQUE,
-            admin_pw TEXT NOT NULL UNIQUE
-            );
-            """
-            init_user = """
-            CREATE TABLE IF NOT EXISTS users (
-            user_db TEXT NOT NULL UNIQUE,
-            created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-            """
-            for query in [init_auditlog, init_admin, init_user]:
-                cur.execute(query)
-
-
 class InitUser:
     def __init__(self, user_db):
         self.user_db = user_db
