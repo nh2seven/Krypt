@@ -3,12 +3,9 @@ from PyQt6.QtWidgets import (
     QApplication,
     QMainWindow,
     QWidget,
-    QLabel,
-    QVBoxLayout,
     QHBoxLayout,
     QStackedWidget,
 )
-from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import Qt, pyqtSignal
 
 # Remove sidebar import
@@ -21,8 +18,10 @@ from .generator import PasswordGeneratorDialog
 class MainWindow(QMainWindow):
     logout = pyqtSignal()
 
-    def __init__(self):
+    def __init__(self, db_path, username=None):
         super().__init__()
+        self.db_path = db_path
+        self.username = username
         self.setWindowTitle("Krypt")
         self.setFixedSize(1000, 700)
         self.setWindowFlags(
@@ -84,7 +83,7 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.credentials_view)
         
         # Settings page (index 1)
-        self.settings_view = SettingsView()
+        self.settings_view = SettingsView(self.db_path, self.username)
         self.stack.addWidget(self.settings_view)
 
     def show_generator_dialog(self):
