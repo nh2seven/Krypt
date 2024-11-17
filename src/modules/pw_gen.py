@@ -2,13 +2,6 @@ import string
 import secrets
 import random
 
-def generate_password(length: int, include_letters: bool = True, 
-                     include_digits: bool = True, 
-                     include_symbols: bool = True) -> str:
-    """Generate a secure random password."""
-    # Original function remains unchanged
-    ...
-
 def generate_strong_password(length: int) -> str:
     """Generate a strong password with required character types.
     
