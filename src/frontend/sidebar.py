@@ -63,12 +63,22 @@ class GroupSidebar(QFrame):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll.setStyleSheet(
-            "QScrollArea{border: none; background-color: transparent;}"
-        )
+        scroll.setStyleSheet("""
+            QScrollArea {
+                border: none;
+            }
+            QWidget {
+                background-color: #f5f5f5;
+            }
+        """)
 
         # Container for group buttons
         self.group_container = QWidget()
+        self.group_container.setStyleSheet("""
+            QWidget {
+                background-color: #f5f5f5;
+            }
+        """)
         self.groups_layout = QVBoxLayout(self.group_container)
         self.groups_layout.setSpacing(2)
         self.groups_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
