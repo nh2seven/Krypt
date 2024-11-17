@@ -78,10 +78,10 @@ class MainWindow(QMainWindow):
     def _setup_pages(self):
         """Setup all application pages"""
         # Passwords page (index 0)
-        self.credentials_view = CredentialsView()
+        self.credentials_view = CredentialsView(db_path=self.db_path)
         self.stack.addWidget(self.credentials_view)
         
-        # Settings page (index 1)
+        # Settings page (index 1) 
         self.settings_view = SettingsView(self.db_path, self.username)
         self.stack.addWidget(self.settings_view)
 
