@@ -68,7 +68,32 @@ class Groups:
             cur.execute(query, (group_id,))
 
 
+class Audit:
+    def __init__(self, db):
+        """
+        Handle user audit.
+
+        Args:
+        db (str): Database path.
+        """
+        self.db = db
+
+    def create_audit(self):
+        audit = iu(self.db)
+        audit.init_audit()
+
+    def add_log(self, action_type, details):
+        """Inserts an entry into the auditlog table."""
+        with db_connect(self.database) as cur:
+            insert_auditlog = """
+            INSERT INTO auditlog (action_type, details) 
+            VALUES (?, ?);
+            """
+            cur.execute(insert_auditlog, (action_type, details))
+
+
 if __name__ == "__main__":  # Dummy code, to be replaced
     database = "user.db"
     cred = Credentials(database)
     group = Groups(database)
+    audit = Audit(database)
