@@ -8,7 +8,6 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 
-# Remove sidebar import
 from .topbar import TopToolBar
 from .cred import CredentialsView
 from .settings import SettingsView
@@ -86,20 +85,23 @@ class MainWindow(QMainWindow):
         self.settings_view = SettingsView(self.db_path, self.username)
         self.stack.addWidget(self.settings_view)
 
+    def handle_page_change(self, index):
+        """Handle page change from toolbar"""
+        if index == 1:  # Generator tab
+            self.show_generator_dialog()
+            toolbar_index = 0 if self.stack.currentIndex() == 0 else 2
+            self.toolbar.set_active_tab(toolbar_index)
+        elif index == 2:  # Settings tab
+            self.last_active_tab = 2
+            self.stack.setCurrentIndex(2)
+        else:  # Credentials tab
+            self.last_active_tab = 0
+            self.stack.setCurrentIndex(0)
+
     def show_generator_dialog(self):
         """Show password generator dialog"""
         dialog = PasswordGeneratorDialog(self)
         dialog.exec()
-
-    def handle_page_change(self, index):
-        """Handle page change from toolbar"""
-        if index == 1:
-            self.show_generator_dialog()
-            # Revert to last active tab
-            self.toolbar.set_active_tab(self.last_active_tab)
-        else:
-            self.last_active_tab = index  # Update last active tab
-            self.stack.setCurrentIndex(index)
 
     def handle_logout(self):
         """Clean up and return to login screen"""
