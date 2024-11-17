@@ -64,6 +64,19 @@ class InitUser:
             """
             cur.execute(init_group)
 
+    def init_audit(self):
+        """Creates the auditlog table if it does not exist."""
+        with db_connect(self.database) as cur:
+            init_auditlog = """
+            CREATE TABLE IF NOT EXISTS auditlog (
+            log_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            action_type TEXT DEFAULT "None",
+            action_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            details TEXT DEFAULT "None"
+            );
+            """
+            cur.execute(init_auditlog)
+
 
 if __name__ == "__main__":
     exit("Invalid entry point")
