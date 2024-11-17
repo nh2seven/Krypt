@@ -12,16 +12,22 @@ class Application:
         setup.dirs()
 
         self.login = login.LoginScreen()
-        self.main_window = base.MainWindow()
+        self.main_window = None
         self.login.login_success.connect(self.show_main_window)
-        self.main_window.logout.connect(self.show_login)
 
     def show_login(self):
-        self.main_window.hide()
+        if self.main_window:
+            self.main_window.hide()
         self.login.clear_fields()
         self.login.show()
 
     def show_main_window(self):
+        if not self.main_window:
+            db_path = self.login.user_auth.db
+            username = self.login.current_user
+            self.main_window = base.MainWindow(db_path, username)
+            self.main_window.logout.connect(self.show_login)
+
         self.login.hide()
         self.main_window.refresh_credentials()
         self.main_window.show()
