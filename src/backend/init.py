@@ -53,7 +53,7 @@ class InitUser:
 
     def init_audit(self):
         """Creates the auditlog table if it does not exist."""
-        with db_connect(self.database) as cur:
+        with db_connect(self.user_db) as cur:
             init_auditlog = """
             CREATE TABLE IF NOT EXISTS auditlog (
             log_id INTEGER PRIMARY KEY AUTOINCREMENT,
