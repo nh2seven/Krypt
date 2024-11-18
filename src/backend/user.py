@@ -74,6 +74,9 @@ class Groups:
         with db_connect(self.db) as cur:
             query = """SELECT group_id FROM groups WHERE title = ?;"""
             cur.execute(query, (title,))
+            result = cur.fetchone()
+            return result[0] if result else None
+
 
     def modify_group(self, new_title, group_id):
         with db_connect(self.db) as cur:
