@@ -44,9 +44,6 @@ class InitUser:
             CREATE TABLE IF NOT EXISTS groups (
             group_id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT UNIQUE,
-            created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            accessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             """
             cur.execute(init_group)
