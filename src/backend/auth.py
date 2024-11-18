@@ -23,6 +23,7 @@ class User:
             user.init_user(pw)
             user.init_cred()
             user.init_group()
+            user.init_audit()
             return True
         except Exception as e:
             print(f"Error creating user database: {e}")
