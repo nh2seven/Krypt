@@ -49,6 +49,37 @@ class Groups:
         group = iu(self.db)
         group.init_cred()
 
+    def add_group(self, title):
+        """Add a new group"""
+        with db_connect(self.db) as cur:
+            query = """INSERT INTO groups (title) VALUES (?);"""
+            cur.execute(query, (title,))
+            return cur.lastrowid
+
+    def get_groups(self):
+        """Get all groups"""
+        with db_connect(self.db) as cur:
+            query = """SELECT group_id, title FROM groups;"""
+            cur.execute(query)
+            return cur.fetchall()
+        
+    def get_group(self, group_id):
+        """Get group by ID"""
+        with db_connect(self.db) as cur:
+            query = """SELECT * FROM groups WHERE group_id = ?;"""
+            cur.execute(query, (group_id,))
+            return cur.fetchone()
+
+    def get_gid(self, title):
+        with db_connect(self.db) as cur:
+            query = """SELECT group_id FROM groups WHERE title = ?;"""
+            cur.execute(query, (title,))
+
+    def modify_group(self, new_title, group_id):
+        with db_connect(self.db) as cur:
+            query = """UPDATE groups SET title = ? WHERE group_id = ?;"""
+            cur.execute(query, (new_title, group_id))
+
     def delete_group(self, group_id):
         with db_connect(self.db) as cur:
             query = """DELETE FROM groups WHERE group_id = ?;"""
