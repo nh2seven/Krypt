@@ -1,7 +1,8 @@
 # src/frontend/sidebar.py
-from PyQt6.QtWidgets import QFrame, QVBoxLayout, QWidget, QScrollArea
+from PyQt6.QtWidgets import QFrame, QVBoxLayout, QWidget, QScrollArea, QHBoxLayout
 from PyQt6.QtCore import pyqtSignal, Qt
 from qfluentwidgets import PushButton, SubtitleLabel
+from src.modules.contextmanager import db_connect
 
 
 class StyleSheet:
@@ -42,74 +43,73 @@ class GroupButton(PushButton):
 
 
 class GroupSidebar(QFrame):
-    groupSelected = pyqtSignal(str)  # Emits group name when selected
-
-    def __init__(self, parent=None):
+    groupSelected = pyqtSignal(int)
+    
+    def __init__(self, parent=None, db_path=None):
         super().__init__(parent)
+        self.db_path = db_path
         self.setObjectName("sidebar")
         self.setStyleSheet(StyleSheet.SIDEBAR_STYLE)
         self.setFixedWidth(250)
-
-        # Main layout
+        
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(10)
-
-        # Header
+        
+        header_layout = QHBoxLayout()
         self.header = SubtitleLabel("Groups")
-        layout.addWidget(self.header)
+        header_layout.addWidget(self.header)
+        layout.addLayout(header_layout)
 
-        # Scrollable group list
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setStyleSheet("""
-            QScrollArea {
-                border: none;
-            }
-            QWidget {
-                background-color: #f5f5f5;
-            }
+            QScrollArea { border: none; }
+            QWidget { background-color: #f5f5f5; }
         """)
 
-        # Container for group buttons
         self.group_container = QWidget()
-        self.group_container.setStyleSheet("""
-            QWidget {
-                background-color: #f5f5f5;
-            }
-        """)
         self.groups_layout = QVBoxLayout(self.group_container)
         self.groups_layout.setSpacing(2)
         self.groups_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         scroll.setWidget(self.group_container)
-
+        
         layout.addWidget(scroll)
-
-        # Store group buttons
         self.group_buttons = {}
+        self.add_group("All", -1)  # -1 represents all groups
+        
+        if db_path:
+            self.load_groups()
 
-    def add_group(self, group_name):
+    def load_groups(self):
+        """Load groups from database"""
+        if not self.db_path:
+            return
+            
+        with db_connect(self.db_path) as cur:
+            cur.execute("SELECT group_id, title FROM groups")
+            groups = cur.fetchall()
+            
+            for group_id, title in groups:
+                self.add_group(title, group_id)
+
+    def add_group(self, title, group_id):
         """Add a new group button"""
-        if group_name not in self.group_buttons:
-            button = GroupButton(group_name)
-            button.clicked.connect(lambda: self._handle_group_click(group_name))
-            self.group_buttons[group_name] = button
+        if title not in self.group_buttons:
+            button = GroupButton(title)
+            button.clicked.connect(lambda: self._handle_group_click(group_id))
+            self.group_buttons[title] = button
             self.groups_layout.addWidget(button)
 
-    def _handle_group_click(self, group_name):
+    def _handle_group_click(self, group_id):
         """Handle group selection"""
-        # Uncheck all buttons
         for button in self.group_buttons.values():
             button.setChecked(False)
 
-        # Check selected button
-        self.group_buttons[group_name].setChecked(True)
+        for title, button in self.group_buttons.items():
+            if button.isChecked():
+                button.setChecked(True)
+                break
 
-        # Emit selected group
-        self.groupSelected.emit(group_name)
-
-    def set_active_group(self, group_name):
-        """Set active group from external call"""
-        if group_name in self.group_buttons:
-            self._handle_group_click(group_name)
+        self.groupSelected.emit(group_id)
