@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QDialog, QHBoxLayout, QLabel, QGridLayout, QFrame, QStackedWidget, QToolButton, QScrollArea, QMessageBox
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QDialog, QHBoxLayout, QLabel, QGridLayout, QFrame, QStackedWidget, QToolButton, QScrollArea, QMessageBox, QComboBox
 from qfluentwidgets import PushButton, LineEdit, SubtitleLabel, TransparentPushButton
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QIcon
@@ -210,8 +210,9 @@ class DetailSidebar(QFrame):
 
 
 class CredentialDialog(QDialog):
-    def __init__(self, parent=None, title="", username="", url=""):
+    def __init__(self, parent=None, title="", username="", url="", db_path=None):
         super().__init__(parent)
+        self.db_path = db_path
         self.setWindowTitle("Edit Credential" if title else "Add Credential")
         self.setFixedWidth(400)
         self.setStyleSheet(
@@ -275,10 +276,15 @@ class CredentialDialog(QDialog):
         self.notes_label = QLabel("Notes:")
         self.notes_input = LineEdit(self)
 
+        # Add group selection
+        self.group_label = QLabel("Group:")
+        self.group_combo = QComboBox(self)
+        self.load_groups()
+
         self.save_button = PushButton("Save")
         self.save_button.clicked.connect(self.accept)
 
-        # Layout fields with proper spacing
+        # Layout fields
         layout.addWidget(self.title_label, 0, 0)
         layout.addWidget(self.title_input, 0, 1)
         layout.addWidget(self.username_label, 1, 0)
@@ -289,7 +295,19 @@ class CredentialDialog(QDialog):
         layout.addWidget(self.url_input, 3, 1)
         layout.addWidget(self.notes_label, 4, 0)
         layout.addWidget(self.notes_input, 4, 1)
-        layout.addWidget(self.save_button, 5, 0, 1, 2)
+        layout.addWidget(self.group_label, 5, 0)
+        layout.addWidget(self.group_combo, 5, 1)
+        layout.addWidget(self.save_button, 6, 0, 1, 2)
+
+    def load_groups(self):
+        """Load groups into combo box"""
+        self.group_combo.addItem("No Group", -1)
+        if self.db_path:
+            with db_connect(self.db_path) as cur:
+                cur.execute("SELECT group_id, title FROM groups")
+                groups = cur.fetchall()
+                for group_id, title in groups:
+                    self.group_combo.addItem(title, group_id)
 
     def get_data(self):
         return (
@@ -298,6 +316,7 @@ class CredentialDialog(QDialog):
             self.password_input.text(),
             self.url_input.text(),
             self.notes_input.text(),
+            self.group_combo.currentData()
         )
 
 
@@ -368,7 +387,7 @@ class CredentialsView(QWidget):
         self.detail_sidebar = DetailSidebar()
 
         # Group sidebar
-        self.group_sidebar = GroupSidebar()
+        self.group_sidebar = GroupSidebar(db_path=db_path)
         self.group_sidebar.groupSelected.connect(self.filter_credentials)
         content_layout.addWidget(self.group_sidebar)
 
@@ -468,7 +487,7 @@ class CredentialsView(QWidget):
         )
         return button
 
-    def load_credentials(self):
+    def load_credentials(self, group_id=None):
         """Load and display credentials from database"""
         self.clear_credentials()
 
@@ -476,16 +495,24 @@ class CredentialsView(QWidget):
             return
 
         with db_connect(self.db_path) as cur:
-            cur.execute("SELECT title, username, password, url, notes FROM credentials")
+            if group_id is None or group_id == -1:
+                query = """SELECT title, username, password, url, notes 
+                          FROM credentials"""
+                params = ()
+            else:
+                query = """SELECT title, username, password, url, notes 
+                          FROM credentials WHERE group_id = ?"""
+                params = (group_id,)
+                
+            cur.execute(query, params)
             credentials = cur.fetchall()
 
         for cred in credentials:
             title, username, password, url, notes = cred
             cred_btn = CredentialButton(title)
             cred_btn.clicked.connect(
-                lambda checked, btn=cred_btn, t=title, u=username, p=password, l=url, n=notes: self._handle_credential_click(
-                    btn, t, u, p, l, n
-                )
+                lambda checked, btn=cred_btn, t=title, u=username, p=password, l=url, n=notes: 
+                self._handle_credential_click(btn, t, u, p, l, n)
             )
             self.cred_list.addWidget(cred_btn)
 
@@ -514,16 +541,15 @@ class CredentialsView(QWidget):
         self.current_button = None
         self.detail_sidebar.show_placeholder()
 
-    def filter_credentials(self, group_name):
+    def filter_credentials(self, group_id):
         """Filter credentials by group"""
-        # TODO: Implement filtering
-        pass
+        self.load_credentials(group_id)
 
     def add_credential(self):
         """Add new credential"""
-        dialog = CredentialDialog(self)
+        dialog = CredentialDialog(self, db_path=self.db_path)
         if dialog.exec():
-            title, username, password, url, notes = dialog.get_data()
+            title, username, password, url, notes, group_id = dialog.get_data()
 
             try:
                 self.cred_manager.add_cred(
@@ -532,9 +558,9 @@ class CredentialsView(QWidget):
                     password=password,
                     url=url,
                     notes=notes,
-                    tags="",  # TODO: Implement tags
-                    expiration="",  # TODO: Implement expiration
-                    group_id=None,  # TODO: Implement groups
+                    tags="",
+                    expiration="",
+                    group_id=group_id if group_id != -1 else None
                 )
                 self.load_credentials()
             except Exception as e:
@@ -568,23 +594,29 @@ class CredentialsView(QWidget):
         """Edit selected credential"""
         if not self.current_button:
             return
+
         title = self.current_button.text()
         with db_connect(self.db_path) as cur:
             cur.execute(
-                "SELECT title, username, password, url, notes FROM credentials WHERE title = ?",
-                (title,),
+                """SELECT title, username, password, url, notes, group_id 
+                   FROM credentials WHERE title = ?""",
+                (title,)
             )
             cred = cur.fetchone()
         if not cred:
             return
 
-        title, username, password, url, notes = cred
-        dialog = CredentialDialog(self, title, username, url)
+        title, username, password, url, notes, group_id = cred
+        dialog = CredentialDialog(self, title, username, url, self.db_path)
         dialog.password_input.setText(password)
         dialog.notes_input.setText(notes)
+        if group_id:
+            index = dialog.group_combo.findData(group_id)
+            if index >= 0:
+                dialog.group_combo.setCurrentIndex(index)
 
         if dialog.exec():
-            new_title, new_username, new_password, new_url, new_notes = (
+            new_title, new_username, new_password, new_url, new_notes, new_group_id = (
                 dialog.get_data()
             )
             try:
@@ -596,10 +628,9 @@ class CredentialsView(QWidget):
                     notes=new_notes,
                     tags="",
                     expiration="",
-                    group_id=None,
+                    group_id=new_group_id if new_group_id != -1 else None,
                     title=title,
                 )
-
                 if new_title != title:
                     self.current_button.setText(new_title)
                 self.load_credentials()
