@@ -71,7 +71,7 @@ class Audit:
 
     def add_log(self, action_type, details):
         """Inserts an entry into the auditlog table."""
-        with db_connect(self.database) as cur:
+        with db_connect(self.db) as cur:
             insert_auditlog = """
             INSERT INTO auditlog (action_type, details) 
             VALUES (?, ?);
