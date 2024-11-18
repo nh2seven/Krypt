@@ -1,26 +1,7 @@
-# src/frontend/cred.py
-from PyQt6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QDialog,
-    QHBoxLayout,
-    QLabel,
-    QGridLayout,
-    QFrame,
-    QStackedWidget,
-    QToolButton,
-    QScrollArea,
-    QMessageBox,
-)
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QDialog, QHBoxLayout, QLabel, QGridLayout, QFrame, QStackedWidget, QToolButton, QScrollArea, QMessageBox
+from qfluentwidgets import PushButton, LineEdit, SubtitleLabel, TransparentPushButton
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QIcon
-
-from qfluentwidgets import (
-    PushButton,
-    LineEdit,
-    SubtitleLabel,
-    TransparentPushButton,
-)
 
 from .sidebar import GroupSidebar
 from src.backend.user import Credentials
@@ -59,7 +40,8 @@ class DetailSidebar(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFixedWidth(350)
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QFrame {
                 background-color: #f5f5f5;
                 border-left: 1px solid #e0e0e0;
@@ -87,7 +69,8 @@ class DetailSidebar(QFrame):
                 color: #000000;
                 margin-bottom: 20px;
             }
-        """)
+        """
+        )
 
         # Create main layout
         layout = QVBoxLayout(self)
@@ -231,7 +214,8 @@ class CredentialDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Edit Credential" if title else "Add Credential")
         self.setFixedWidth(400)
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background-color: white;
             }
@@ -264,7 +248,8 @@ class CredentialDialog(QDialog):
             PushButton:pressed {
                 background-color: #005a9e;
             }
-        """)
+        """
+        )
 
         layout = QGridLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
@@ -353,7 +338,7 @@ class CredentialsToolBar(QWidget):
         layout.addWidget(self.add_btn)
         layout.addWidget(self.edit_btn)
         layout.addWidget(self.delete_btn)
-        layout.addStretch()  # Push buttons to left
+        layout.addStretch()
 
     def _create_tool_button(self, tooltip, icon_path):
         button = QToolButton()
@@ -551,7 +536,7 @@ class CredentialsView(QWidget):
                     expiration="",  # TODO: Implement expiration
                     group_id=None,  # TODO: Implement groups
                 )
-                self.load_credentials()  # Refresh view
+                self.load_credentials()
             except Exception as e:
                 QMessageBox.critical(
                     self, "Error", f"Failed to add credential: {str(e)}"
@@ -573,7 +558,7 @@ class CredentialsView(QWidget):
         if reply == QMessageBox.StandardButton.Yes:
             try:
                 self.cred_manager.remove_cred(title)
-                self.load_credentials()  # Refresh view
+                self.load_credentials()
             except Exception as e:
                 QMessageBox.critical(
                     self, "Error", f"Failed to delete credential: {str(e)}"
@@ -583,21 +568,20 @@ class CredentialsView(QWidget):
         """Edit selected credential"""
         if not self.current_button:
             return
-
         title = self.current_button.text()
-
-        # Get current values
         with db_connect(self.db_path) as cur:
             cur.execute(
-                "SELECT username, url, notes FROM credentials WHERE title = ?", (title,)
+                "SELECT title, username, password, url, notes FROM credentials WHERE title = ?",
+                (title,),
             )
             cred = cur.fetchone()
-
         if not cred:
             return
 
-        username, url, notes = cred
+        title, username, password, url, notes = cred
         dialog = CredentialDialog(self, title, username, url)
+        dialog.password_input.setText(password)
+        dialog.notes_input.setText(notes)
 
         if dialog.exec():
             new_title, new_username, new_password, new_url, new_notes = (
@@ -605,16 +589,20 @@ class CredentialsView(QWidget):
             )
             try:
                 self.cred_manager.modify_cred(
-                    title=title,  # Original title for WHERE clause
+                    new_title=new_title,
                     username=new_username,
-                    password=new_password,
+                    password=new_password if new_password else password,
                     url=new_url,
                     notes=new_notes,
-                    tags="",  # TODO: Implement tags
-                    expiration="",  # TODO: Implement expiration
-                    group_id=None,  # TODO: Implement groups
+                    tags="",
+                    expiration="",
+                    group_id=None,
+                    title=title,
                 )
-                self.load_credentials()  # Refresh view
+
+                if new_title != title:
+                    self.current_button.setText(new_title)
+                self.load_credentials()
             except Exception as e:
                 QMessageBox.critical(
                     self, "Error", f"Failed to update credential: {str(e)}"
