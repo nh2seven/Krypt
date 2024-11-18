@@ -1,22 +1,10 @@
 # src/frontend/sidebar.py
-from PyQt6.QtWidgets import (
-    QFrame,
-    QVBoxLayout,
-    QWidget,
-    QScrollArea,
-    QHBoxLayout,
-    QInputDialog,
-    QMessageBox,
-)
+from PyQt6.QtWidgets import QFrame, QVBoxLayout, QWidget, QScrollArea, QHBoxLayout, QInputDialog, QMessageBox
 from PyQt6.QtCore import pyqtSignal, Qt
 from PyQt6.QtGui import QIcon
-from qfluentwidgets import (
-    PushButton,
-    SubtitleLabel,
-    TransparentToolButton,
-    SubtitleLabel,
-)
+from qfluentwidgets import PushButton, SubtitleLabel, TransparentToolButton, SubtitleLabel
 from src.modules.contextmanager import db_connect
+from src.backend.user import Groups
 
 
 class StyleSheet:
@@ -142,7 +130,6 @@ class GroupSidebar(QFrame):
         if ok and title:
             try:
                 with db_connect(self.db_path) as cur:
-                    # Check if group exists
                     cur.execute("SELECT title FROM groups WHERE title = ?", (title,))
                     if cur.fetchone():
                         QMessageBox.warning(
@@ -150,11 +137,8 @@ class GroupSidebar(QFrame):
                         )
                         return
 
-                    # Add new group
                     cur.execute("INSERT INTO groups (title) VALUES (?)", (title,))
                     group_id = cur.lastrowid
-
-                    # Add button for new group
                     self.add_group(title, group_id)
 
             except Exception as e:
@@ -162,7 +146,6 @@ class GroupSidebar(QFrame):
 
     def delete_group(self):
         """Delete selected group"""
-        # Find selected group
         selected_button = None
         selected_title = None
 
@@ -173,41 +156,34 @@ class GroupSidebar(QFrame):
                 break
 
         if not selected_button or selected_title == "All":
-            QMessageBox.warning(self, "Warning", "Please select a group to delete")
+            QMessageBox.warning(self, "Warning", "Please select a group to delete.")
             return
 
-        # Confirm deletion
-        reply = QMessageBox.question(
-            self,
-            "Confirm Deletion",
-            f"Are you sure you want to delete group '{selected_title}'?\n"
-            "All credentials in this group will be unassigned.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
+        try:
+            groups = Groups(self.db_path)
+            group_id = groups.get_gid(selected_title)
 
-        if reply == QMessageBox.StandardButton.Yes:
-            try:
-                with db_connect(self.db_path) as cur:
-                    # Update credentials to remove group association
-                    cur.execute(
-                        "UPDATE credentials SET group_id = NULL WHERE group_id = ("
-                        "SELECT group_id FROM groups WHERE title = ?)",
-                        (selected_title,),
-                    )
+            if not group_id:
+                QMessageBox.warning(self, "Error", f"Group '{selected_title}' not found.")
+                return
+            confirmation = QMessageBox.question(
+                self,
+                "Delete Group",
+                f"Are you sure you want to delete the group '{selected_title}'?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
 
-                    # Delete group
-                    cur.execute("DELETE FROM groups WHERE title = ?", (selected_title,))
+            if confirmation == QMessageBox.StandardButton.Yes:
+                groups.delete_group(group_id)
 
-                    # Remove button
-                    self.groups_layout.removeWidget(selected_button)
-                    selected_button.deleteLater()
-                    del self.group_buttons[selected_title]
+                self.groups_layout.removeWidget(selected_button)
+                selected_button.deleteLater()
+                del self.group_buttons[selected_title]
 
-                    # Select "All" group
-                    self._handle_group_click(-1)
+                self._handle_group_click(-1)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to delete group: {str(e)}")
 
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to delete group: {str(e)}")
 
     def load_groups(self):
         """Load groups from database"""
