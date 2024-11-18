@@ -30,8 +30,6 @@ class InitUser:
             password TEXT NOT NULL,
             url TEXT DEFAULT "None",
             notes TEXT DEFAULT "None",
-            tags TEXT DEFAULT "None",
-            expiration DATETIME,
             group_id INTEGER,
             FOREIGN KEY (group_id) REFERENCES groups(group_id)
             );
