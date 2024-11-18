@@ -23,10 +23,10 @@ class Credentials:
             query = """SELECT * FROM credentials WHERE title = ?;"""
             cur.execute(query, (title,))
 
-    def modify_cred(self, title, username, password, url, notes, tags, expiration, group_id):
+    def modify_cred(self, new_title, username, password, url, notes, tags, expiration, group_id, title):
         with db_connect(self.db) as cur:
-            query = """UPDATE credentials SET username = ?, password = ?, url = ?, notes = ?, tags = ?, expiration = ?, group_id = ? WHERE title = ?;"""
-            params = (username, password, url, notes, tags, expiration, group_id, title)
+            query = """UPDATE credentials SET title = ?, username = ?, password = ?, url = ?, notes = ?, tags = ?, expiration = ?, group_id = ? WHERE title = ?;"""
+            params = (new_title, username, password, url, notes, tags, expiration, group_id,  title)
             cur.execute(query, params)
 
     def remove_cred(self, title):
