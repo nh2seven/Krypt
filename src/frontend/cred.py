@@ -558,8 +558,6 @@ class CredentialsView(QWidget):
                     password=password,
                     url=url,
                     notes=notes,
-                    tags="",
-                    expiration="",
                     group_id=group_id if group_id != -1 else None
                 )
                 self.load_credentials()
@@ -626,8 +624,6 @@ class CredentialsView(QWidget):
                     password=new_password if new_password else password,
                     url=new_url,
                     notes=new_notes,
-                    tags="",
-                    expiration="",
                     group_id=new_group_id if new_group_id != -1 else None,
                     title=title,
                 )

@@ -12,10 +12,10 @@ class Credentials:
         """
         self.db = db
 
-    def add_cred(self, title, username, password, url, notes, tags, expiration, group_id):
+    def add_cred(self, title, username, password, url, notes, group_id):
         with db_connect(self.db) as cur:
-            query = """INSERT INTO credentials (title, username, password, url, notes, tags, expiration, group_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"""
-            params = (title, username, password, url, notes, tags, expiration, group_id)
+            query = """INSERT INTO credentials (title, username, password, url, notes, group_id) VALUES (?, ?, ?, ?, ?, ?);"""
+            params = (title, username, password, url, notes, group_id)
             cur.execute(query, params)
 
     def get_cred(self, title):
@@ -23,10 +23,10 @@ class Credentials:
             query = """SELECT * FROM credentials WHERE title = ?;"""
             cur.execute(query, (title,))
 
-    def modify_cred(self, new_title, username, password, url, notes, tags, expiration, group_id, title):
+    def modify_cred(self, new_title, username, password, url, notes, group_id, title):
         with db_connect(self.db) as cur:
-            query = """UPDATE credentials SET title = ?, username = ?, password = ?, url = ?, notes = ?, tags = ?, expiration = ?, group_id = ? WHERE title = ?;"""
-            params = (new_title, username, password, url, notes, tags, expiration, group_id,  title)
+            query = """UPDATE credentials SET title = ?, username = ?, password = ?, url = ?, notes = ?, group_id = ? WHERE title = ?;"""
+            params = (new_title, username, password, url, notes, group_id, title)
             cur.execute(query, params)
 
     def remove_cred(self, title):
