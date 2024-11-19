@@ -61,5 +61,95 @@ class InitUser:
             cur.execute(init_auditlog)
 
 
+class DatabaseTriggers:
+    def __init__(self, user_db):
+        """Initialize the DatabaseTriggers class with the user database path."""
+        self.user_db = user_db
+
+    def create_triggers(self):
+        """Create all required triggers in the database."""
+        triggers = [
+            # Trigger for AFTER INSERT on credentials
+            """
+            CREATE TRIGGER IF NOT EXISTS after_cred_insert
+            AFTER INSERT ON credentials
+            BEGIN
+                INSERT INTO auditlog (action_type, action_time, details)
+                VALUES ('INSERT', DATETIME('now'), 'Inserted credential with title: ' || NEW.title);
+            END;
+            """,
+            # Trigger for AFTER UPDATE on credentials
+            """
+            CREATE TRIGGER IF NOT EXISTS after_cred_update
+            AFTER UPDATE ON credentials
+            BEGIN
+                INSERT INTO auditlog (action_type, action_time, details)
+                VALUES ('UPDATE', DATETIME('now'), 'Updated credential with title: ' || NEW.title || '. Changes made to username, password, or other fields.');
+            END;
+            """,
+            # Trigger for AFTER DELETE on credentials
+            """
+            CREATE TRIGGER IF NOT EXISTS after_cred_delete
+            AFTER DELETE ON credentials
+            BEGIN
+                INSERT INTO auditlog (action_type, action_time, details)
+                VALUES ('DELETE', DATETIME('now'), 'Deleted credential with title: ' || OLD.title);
+            END;
+            """,
+            # Trigger to validate tags before INSERT
+            """
+            CREATE TRIGGER IF NOT EXISTS validate_tags_before_insert
+            BEFORE INSERT ON credentials
+            FOR EACH ROW
+            WHEN instr(NEW.tags, ',') != 0
+            BEGIN
+                SELECT RAISE(FAIL, 'tags column must not contain multiple values');
+            END;
+            """,
+            # Trigger to validate tags before UPDATE
+            """
+            CREATE TRIGGER IF NOT EXISTS validate_tags_before_update
+            BEFORE UPDATE ON credentials
+            FOR EACH ROW
+            WHEN instr(NEW.tags, ',') != 0
+            BEGIN
+                SELECT RAISE(FAIL, 'tags column must not contain multiple values');
+            END;
+            """,
+            # Trigger for AFTER INSERT on groups
+            """
+            CREATE TRIGGER IF NOT EXISTS after_group_insert
+            AFTER INSERT ON groups
+            BEGIN
+                INSERT INTO auditlog (action_type, action_time, details)
+                VALUES ('INSERT', DATETIME('now'), 'Inserted group with title: ' || NEW.title);
+            END;
+            """,
+            # Trigger for AFTER DELETE on groups
+            """
+            CREATE TRIGGER IF NOT EXISTS after_group_delete
+            AFTER DELETE ON groups
+            BEGIN
+                INSERT INTO auditlog (action_type, action_time, details)
+                VALUES ('DELETE', DATETIME('now'), 'Deleted group with title: ' || OLD.title || ' and group_id: ' || OLD.group_id);
+            END;
+            """,
+            # Trigger for AFTER UPDATE on groups
+            """
+            CREATE TRIGGER IF NOT EXISTS after_group_update
+            AFTER UPDATE ON groups
+            BEGIN
+                INSERT INTO auditlog (action_type, action_time, details)
+                VALUES ('UPDATE', DATETIME('now'), 'Updated group with title: ' || OLD.title || ' to new title: ' || NEW.title || ' and group_id: ' || NEW.group_id);
+            END;
+            """
+        ]
+
+        # Use the db_connect context manager to execute trigger creation statements
+        with db_connect(self.user_db) as cursor:
+            for trigger_sql in triggers:
+                cursor.execute(trigger_sql)
+
+
 if __name__ == "__main__":
     exit("Invalid entry point")
