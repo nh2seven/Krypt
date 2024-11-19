@@ -51,7 +51,7 @@ class InitUser:
             init_auditlog = """
             CREATE TABLE IF NOT EXISTS auditlog (
                 log_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                action_type T  # Encryption to be applied in an external moduleEXT DEFAULT 'None',
+                action_type TEXT DEFAULT 'None',
                 action_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 details TEXT DEFAULT 'None'
             );
