@@ -91,9 +91,9 @@ class StyleSheet:
 
 
 class GroupButton(PushButton):
-    def __init__(self, text):
+    def __init__(self, text, count=0):
         super().__init__()
-        self.setText(text)
+        self.setText(f"{text} ({count})")
         self.setCheckable(True)
         self.setAutoExclusive(True)
         self.setStyleSheet(StyleSheet.BUTTON_STYLE)
@@ -242,20 +242,30 @@ class GroupSidebar(QFrame):
         if not self.db_path:
             return
 
-        with db_connect(self.db_path) as cur:
-            cur.execute("SELECT group_id, title FROM groups")
-            groups = cur.fetchall()
+        # Clear existing groups except "All"
+        for gid, button in list(self.group_buttons.items()):
+            if gid != -1:  # Don't remove "All" group
+                button.deleteLater()
+                del self.group_buttons[gid]
 
-            for group_id, title in groups:
-                self.add_group(title, group_id)
+        group_manager = Groups(self.db_path)
+        groups = group_manager.get_groups()
 
-    def add_group(self, title, group_id):
-        """Add a new group button"""
-        if title not in self.group_buttons:
-            button = GroupButton(title)
-            button.clicked.connect(lambda: self._handle_group_click(group_id))
-            self.group_buttons[title] = button
-            self.groups_layout.addWidget(button)
+        # Update "All" group count
+        total_count = sum(count for _, _, count in groups)
+        self.group_buttons[-1].setText(f"All ({total_count})")
+
+        # Add groups with counts
+        for group_id, title, count in groups:
+            self.add_group(title, group_id, count)
+
+    def add_group(self, text, group_id, count=0):
+        """Add a group button"""
+        button = GroupButton(text, count)
+        button.clicked.connect(lambda: self.groupSelected.emit(group_id))
+        self.group_buttons[group_id] = button
+        self.groups_layout.addWidget(button)
+        return button
 
     def _handle_group_click(self, group_id):
         """Handle group selection"""
@@ -268,3 +278,21 @@ class GroupSidebar(QFrame):
                 break
 
         self.groupSelected.emit(group_id)
+
+    def refresh_groups(self):
+        """Refresh group counts"""
+        if not self.db_path:
+            return
+            
+        group_manager = Groups(self.db_path)
+        groups = group_manager.get_groups()
+        
+        # Update counts in existing buttons
+        total_count = 0
+        for group_id, title, count in groups:
+            total_count += count
+            if group_id in self.group_buttons:
+                self.group_buttons[group_id].setText(f"{title} ({count})")
+                
+        # Update "All" count
+        self.group_buttons[-1].setText(f"All ({total_count})")

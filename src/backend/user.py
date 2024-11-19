@@ -57,9 +57,15 @@ class Groups:
             return cur.lastrowid
 
     def get_groups(self):
-        """Get all groups"""
+        """Get all groups with credential counts"""
         with db_connect(self.db) as cur:
-            query = """SELECT group_id, title FROM groups;"""
+            query = """
+            SELECT g.group_id, g.title, COUNT(c.cred_id) as cred_count
+            FROM groups g
+            LEFT JOIN credentials c ON g.group_id = c.group_id
+            GROUP BY g.group_id, g.title
+            ORDER BY g.title;
+            """
             cur.execute(query)
             return cur.fetchall()
         
