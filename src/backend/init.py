@@ -39,8 +39,6 @@ class InitUser:
                 password TEXT NOT NULL,
                 url TEXT DEFAULT 'None',
                 notes TEXT DEFAULT 'None',
-                tags TEXT DEFAULT '',
-                expiration TEXT DEFAULT NULL,
                 group_id INTEGER,
                 FOREIGN KEY (group_id) REFERENCES groups(group_id)
             );
@@ -53,7 +51,7 @@ class InitUser:
             init_auditlog = """
             CREATE TABLE IF NOT EXISTS auditlog (
                 log_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                action_type TEXT DEFAULT 'None',
+                action_type T  # Encryption to be applied in an external moduleEXT DEFAULT 'None',
                 action_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 details TEXT DEFAULT 'None'
             );
@@ -69,7 +67,6 @@ class DatabaseTriggers:
     def create_triggers(self):
         """Create all required triggers in the database."""
         triggers = [
-            # Trigger for AFTER INSERT on credentials
             """
             CREATE TRIGGER IF NOT EXISTS after_cred_insert
             AFTER INSERT ON credentials
@@ -78,7 +75,6 @@ class DatabaseTriggers:
                 VALUES ('INSERT', DATETIME('now'), 'Inserted credential with title: ' || NEW.title);
             END;
             """,
-            # Trigger for AFTER UPDATE on credentials
             """
             CREATE TRIGGER IF NOT EXISTS after_cred_update
             AFTER UPDATE ON credentials
@@ -87,7 +83,6 @@ class DatabaseTriggers:
                 VALUES ('UPDATE', DATETIME('now'), 'Updated credential with title: ' || NEW.title || '. Changes made to username, password, or other fields.');
             END;
             """,
-            # Trigger for AFTER DELETE on credentials
             """
             CREATE TRIGGER IF NOT EXISTS after_cred_delete
             AFTER DELETE ON credentials
@@ -96,7 +91,6 @@ class DatabaseTriggers:
                 VALUES ('DELETE', DATETIME('now'), 'Deleted credential with title: ' || OLD.title);
             END;
             """,
-            # Trigger to validate tags before INSERT
             """
             CREATE TRIGGER IF NOT EXISTS validate_tags_before_insert
             BEFORE INSERT ON credentials
@@ -106,7 +100,6 @@ class DatabaseTriggers:
                 SELECT RAISE(FAIL, 'tags column must not contain multiple values');
             END;
             """,
-            # Trigger to validate tags before UPDATE
             """
             CREATE TRIGGER IF NOT EXISTS validate_tags_before_update
             BEFORE UPDATE ON credentials
@@ -116,7 +109,6 @@ class DatabaseTriggers:
                 SELECT RAISE(FAIL, 'tags column must not contain multiple values');
             END;
             """,
-            # Trigger for AFTER INSERT on groups
             """
             CREATE TRIGGER IF NOT EXISTS after_group_insert
             AFTER INSERT ON groups
@@ -125,7 +117,6 @@ class DatabaseTriggers:
                 VALUES ('INSERT', DATETIME('now'), 'Inserted group with title: ' || NEW.title);
             END;
             """,
-            # Trigger for AFTER DELETE on groups
             """
             CREATE TRIGGER IF NOT EXISTS after_group_delete
             AFTER DELETE ON groups
@@ -134,7 +125,6 @@ class DatabaseTriggers:
                 VALUES ('DELETE', DATETIME('now'), 'Deleted group with title: ' || OLD.title || ' and group_id: ' || OLD.group_id);
             END;
             """,
-            # Trigger for AFTER UPDATE on groups
             """
             CREATE TRIGGER IF NOT EXISTS after_group_update
             AFTER UPDATE ON groups
@@ -145,7 +135,6 @@ class DatabaseTriggers:
             """
         ]
 
-        # Use the db_connect context manager to execute trigger creation statements
         with db_connect(self.user_db) as cursor:
             for trigger_sql in triggers:
                 cursor.execute(trigger_sql)
