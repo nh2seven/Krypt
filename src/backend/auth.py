@@ -1,5 +1,5 @@
 import os
-from .init import InitUser
+from .init import InitUser, DatabaseTriggers
 from src.modules.contextmanager import db_connect
 
 
@@ -14,7 +14,7 @@ class User:
         """
         self.db = db
         self.uname = username
-        self.pw = password  # Encryption to be applied in an external module
+        self.pw = password
 
     def create(self, pw):
         """Creates a new user database."""
@@ -24,6 +24,9 @@ class User:
             user.init_cred()
             user.init_group()
             user.init_audit()
+            
+            trigger = DatabaseTriggers(self.db)
+            trigger.create_triggers()
             return True
         except Exception as e:
             print(f"Error creating user database: {e}")
@@ -36,7 +39,6 @@ class User:
             cur.execute(query)
             result = cur.fetchone()
             return result and result[0] == self.pw
-            # Add redirect to user panel
 
     def change_password(self, current_pw, new_pw):
         """
@@ -49,7 +51,6 @@ class User:
         Returns:
             bool: True if password was changed successfully
         """
-        # Verify current password first
         with db_connect(self.db) as cur:
             verify = "SELECT pwd FROM user"
             cur.execute(verify)
@@ -57,7 +58,6 @@ class User:
             if not result or result[0] != current_pw:
                 return False
                 
-            # Update to new password
             update = "UPDATE user SET pwd = ?"
             cur.execute(update, (new_pw,))
             return True
@@ -65,14 +65,12 @@ class User:
     def logout(self):
         """Handles user logout"""
         print(f"{self.uname} logged out")
-        # Redirect to login screen; encrypt data before logging out
 
     def delete(self):
         """Deletes the user database"""
         db_path = "db/users/" + self.db
         if os.path.exists(db_path):
             os.remove(self.db)
-            # Redirect to login screen, print message
 
 
 if __name__ == "__main__":
