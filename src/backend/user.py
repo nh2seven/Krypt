@@ -85,8 +85,10 @@ class Groups:
 
     def delete_group(self, group_id):
         with db_connect(self.db) as cur:
-            query = """DELETE FROM groups WHERE group_id = ?;"""
-            cur.execute(query, (group_id,))
+            query1 = """UPDATE credentials SET group_id = NULL WHERE group_id = ?;"""
+            query2 = """DELETE FROM groups WHERE group_id = ?;"""
+            cur.execute(query1, (group_id,))
+            cur.execute(query2, (group_id,))
 
 
 class Audit:

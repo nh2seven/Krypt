@@ -47,12 +47,55 @@ class StyleSheet:
     }
     """
 
+    def delete_group(self):
+        """Delete selected group"""
+        selected_button = None
+        selected_title = None
+
+        for title, button in self.group_buttons.items():
+            if button.isChecked():
+                selected_button = button
+                selected_title = title
+                break
+
+        if not selected_button or selected_title == "All":
+            QMessageBox.warning(self, "Warning", "Please select a group to delete.")
+            return
+
+        try:
+            groups = Groups(self.db_path)
+            group_id = groups.get_gid(selected_title)
+
+            if not group_id:
+                QMessageBox.warning(
+                    self, "Error", f"Group '{selected_title}' not found."
+                )
+                return
+            confirmation = QMessageBox.question(
+                self,
+                "Delete Group",
+                f"Are you sure you want to delete the group '{selected_title}'?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+
+            if confirmation == QMessageBox.StandardButton.Yes:
+                groups.delete_group(group_id)
+
+                self.groups_layout.removeWidget(selected_button)
+                selected_button.deleteLater()
+                del self.group_buttons[selected_title]
+
+                self._handle_group_click(-1)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to delete group: {str(e)}")
+
 
 class GroupButton(PushButton):
     def __init__(self, text):
         super().__init__()
         self.setText(text)
         self.setCheckable(True)
+        self.setAutoExclusive(True)
         self.setStyleSheet(StyleSheet.BUTTON_STYLE)
 
 
@@ -146,26 +189,31 @@ class GroupSidebar(QFrame):
 
     def delete_group(self):
         """Delete selected group"""
+        # Find currently selected button
         selected_button = None
         selected_title = None
 
         for title, button in self.group_buttons.items():
-            if button.isChecked():
+            if button.isChecked() and title != "All":  # Explicitly check it's not "All"
                 selected_button = button
                 selected_title = title
                 break
 
-        if not selected_button or selected_title == "All":
+        if not selected_button:
             QMessageBox.warning(self, "Warning", "Please select a group to delete.")
             return
 
         try:
+            # Get group ID and confirm deletion
             groups = Groups(self.db_path)
             group_id = groups.get_gid(selected_title)
 
             if not group_id:
-                QMessageBox.warning(self, "Error", f"Group '{selected_title}' not found.")
+                QMessageBox.warning(
+                    self, "Error", f"Group '{selected_title}' not found."
+                )
                 return
+
             confirmation = QMessageBox.question(
                 self,
                 "Delete Group",
@@ -174,16 +222,20 @@ class GroupSidebar(QFrame):
             )
 
             if confirmation == QMessageBox.StandardButton.Yes:
+                # Delete group and update UI
                 groups.delete_group(group_id)
-
                 self.groups_layout.removeWidget(selected_button)
                 selected_button.deleteLater()
                 del self.group_buttons[selected_title]
 
-                self._handle_group_click(-1)
+                # Select "All" group after deletion
+                all_button = self.group_buttons.get("All")
+                if all_button:
+                    all_button.setChecked(True)
+                    self._handle_group_click(-1)
+
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to delete group: {str(e)}")
-
 
     def load_groups(self):
         """Load groups from database"""
