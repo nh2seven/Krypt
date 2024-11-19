@@ -20,12 +20,11 @@ class User:
         """Creates a new user database."""
         try:
             user = InitUser(self.db)
+            trigger = DatabaseTriggers(self.db)
             user.init_user(pw)
             user.init_cred()
             user.init_group()
             user.init_audit()
-            
-            trigger = DatabaseTriggers(self.db)
             trigger.create_triggers()
             return True
         except Exception as e:
