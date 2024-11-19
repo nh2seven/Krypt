@@ -29,25 +29,21 @@ class PasswordChangeCard(CardWidget):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(12)
 
-        # Title
         title = TitleLabel("Change Password")
         layout.addWidget(title, 0, 0, 1, 2)
 
-        # Current password
         self.current_pw_label = QLabel("Current Password:")
         self.current_pw_input = LineEdit()
         self.current_pw_input.setEchoMode(LineEdit.EchoMode.Password)
         layout.addWidget(self.current_pw_label, 1, 0)
         layout.addWidget(self.current_pw_input, 1, 1)
 
-        # New password
         self.new_pw_label = QLabel("New Password:")
         self.new_pw_input = LineEdit()
         self.new_pw_input.setEchoMode(LineEdit.EchoMode.Password)
         layout.addWidget(self.new_pw_label, 2, 0)
         layout.addWidget(self.new_pw_input, 2, 1)
 
-        # Confirm password
         self.confirm_pw_label = QLabel("Confirm Password:")
         self.confirm_pw_input = LineEdit()
         self.confirm_pw_input.setEchoMode(LineEdit.EchoMode.Password)
@@ -64,7 +60,6 @@ class PasswordChangeCard(CardWidget):
         new_pw = self.new_pw_input.text()
         confirm_pw = self.confirm_pw_input.text()
 
-        # Validation
         if not all([current_pw, new_pw, confirm_pw]):
             self.show_error("All fields are required")
             return
@@ -73,7 +68,6 @@ class PasswordChangeCard(CardWidget):
             self.show_error("New passwords do not match")
             return
 
-        # Attempt password change
         if self.user.change_password(current_pw, new_pw):
             self.show_success("Password changed successfully!")
             self.clear_fields()
@@ -126,7 +120,7 @@ class SettingsView(QWidget):
         self.pw_change_card.setFixedWidth(300)
         cards_layout.addWidget(self.pw_change_card, 1)
 
-        self.audit_log_card = AuditLogCard()
+        self.audit_log_card = AuditLogCard(db_path=self.db_path)
         self.audit_log_card.setFixedWidth(600)
         cards_layout.addWidget(self.audit_log_card, 2)
 
